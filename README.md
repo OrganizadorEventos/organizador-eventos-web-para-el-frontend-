@@ -1,6 +1,6 @@
-# MIVO Web
+# MIVO · Organizador de eventos
 
-Aplicación web para organizar actividades académicas y sus subtareas. Construida con React 18 y Vite 5.
+Aplicación web para crear y organizar eventos, planificar gestiones logísticas, programar fechas y horas, y hacer seguimiento de su preparación. Construida con React 18 y Vite 5.
 
 ## Desarrollo local
 
@@ -20,12 +20,14 @@ npm run preview
 
 ## Pantallas
 
-- `/login`, `/registro`, `/recuperar`, `/restablecer`: autenticación y recuperación de contraseña.
-- `/hoy`: actividades vencidas, de hoy y próximas, con filtros y acciones persistentes.
-- `/crear`: actividad, datos del curso y subtareas.
-- `/eventos`: búsqueda, filtros y gestión de actividades.
-- `/evento/:id`: detalle, edición, subtareas, reprogramación y bitácora.
-- `/progreso`: resumen calculado con los datos del backend.
-- `/perfil`: datos del usuario y límite diario.
+- `/login`, `/registro`, `/recuperar`, `/restablecer`: acceso y recuperación de cuenta.
+- `/hoy`: agenda de preparación con gestiones vencidas, para hoy y próximas.
+- `/crear`: creación de eventos por tipo, fecha, lugar y descripción, con su plan logístico.
+- `/eventos`: búsqueda, filtros y gestión de los eventos organizados.
+- `/evento/:id`: detalle, edición, gestiones logísticas, reprogramación y bitácora.
+- `/progreso`: resumen del avance de preparación de los eventos.
+- `/perfil`: datos de la cuenta y límite diario para planificar gestiones.
+
+Las gestiones representan acciones organizativas como reservar un espacio, coordinar proveedores o enviar invitaciones. La API conserva nombres de rutas heredados (`tasks`) por compatibilidad.
 
 Configura `VITE_API_URL` solo si el backend no está disponible detrás del proxy local de Vite.

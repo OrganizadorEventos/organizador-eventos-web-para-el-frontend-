@@ -30,8 +30,7 @@ export default function Register() {
     <AuthLayout>
       <div className="auth-form-inner register-form">
         <div className="auth-mobile-logo"><span className="brand-mark">M</span> MIVO</div>
-        <h1>Crear Cuenta</h1>
-        <p className="auth-intro">Organiza hoy, logra mañana.</p>
+        <h1>Crear cuenta</h1>
         {error && <div className="form-error" role="alert">{error}</div>}
         <form onSubmit={onSubmit} noValidate>
           <div className="field"><label htmlFor="reg-name">Nombre de usuario</label><input id="reg-name" type="text" autoComplete="name" minLength={2} maxLength={80} value={name} onChange={(e) => setName(e.target.value)} required /></div>

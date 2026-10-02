@@ -3,18 +3,18 @@ import Modal from './Modal';
 
 const ACTION_META = {
   done: {
-    title: 'Marcar como hecha',
-    confirm: 'Confirmar hecha',
+    title: 'Completar subtarea',
+    confirm: 'Completar subtarea',
     noteLabel: 'Nota (opcional)',
     noteHint: 'Ej: “Catering confirmado por teléfono”.',
-    srText: 'la gestión como hecha',
+    srText: 'la subtarea como completada',
   },
   postponed: {
-    title: 'Posponer gestión',
+    title: 'Posponer subtarea',
     confirm: 'Posponer',
     noteLabel: 'Motivo (opcional)',
     noteHint: 'Ej: “Falta el presupuesto del proveedor”.',
-    srText: 'la gestión como pospuesta',
+    srText: 'la subtarea como pospuesta',
   },
 };
 
@@ -41,7 +41,7 @@ export default function NoteModal({ open, task, action, onClose, onConfirm }) {
   return (
     <Modal open={open} title={meta.title} onClose={onClose} labelledBy={headingId}>
       <p>
-        Vas a marcar <strong>“{task?.title}”</strong> como {action === 'done' ? 'hecha' : 'pospuesta'}.
+        Vas a marcar <strong>“{task?.title}”</strong> como {action === 'done' ? 'completada' : 'pospuesta'}.
       </p>
       {error && <div className="form-error" role="alert">{error}</div>}
       <form onSubmit={submit}>

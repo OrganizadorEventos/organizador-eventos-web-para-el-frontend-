@@ -115,6 +115,58 @@ label { font-weight: 600; display: block; margin-bottom: 4px; }
 .field-hint { color: var(--color-muted); font-size: 0.85rem; margin-top: 4px; }
 .field-error { color: var(--color-danger); font-size: 0.9rem; margin-top: 4px; }
 
+.time-picker { position: relative; }
+.time-picker-trigger {
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-text);
+  text-align: left;
+  font-weight: 400;
+}
+.time-picker-trigger:hover:not(:disabled) { background: #fff; border-color: var(--color-focus); }
+.time-picker-popup {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  width: min(100%, 280px);
+  min-width: 230px;
+  height: 230px;
+  overflow: hidden;
+  border: 1px solid #b7bdc5;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+}
+.time-picker-column {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.time-picker-column + .time-picker-column { border-left: 1px solid #e5e7eb; }
+.time-picker-option {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 5px 4px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: #111827;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+}
+.time-picker-option:hover:not(:disabled) { background: #eff6ff; color: #111827; }
+.time-picker-option.selected { background: #0879f9; color: #fff; font-weight: 700; }
+
 .form-error {
   background: var(--color-danger-soft);
   color: var(--color-danger);
@@ -358,7 +410,8 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
 .user-details { display: grid; flex: 1; min-width: 0; }
 .user-name { overflow: hidden; color: #f6f7fa; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .user-limit { color: #9da8bc; font-size: .68rem; }
-.logout-button { padding: 5px; color: #bac4d5; background: transparent; font-size: 1rem; }
+.logout-button { display: grid; width: 32px; height: 32px; place-items: center; padding: 5px; color: #4b91ff; background: transparent; }
+.logout-button svg { display: block; width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .logout-button:hover { color: #fff; background: rgba(255,255,255,.08); }
 .main-panel { min-height: 100vh; margin-left: 232px; padding: 42px clamp(24px, 6vw, 88px) 64px; }
 .page-content { width: min(100%, 950px); margin: 0 auto; }
@@ -450,6 +503,134 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
   .auth-form-panel { padding-inline: 20px; }
   .auth-visual { min-height: 240px; flex-basis: 240px; }
   .auth-visual img { width: 128px; }
+}
+
+/* Responsive creation screen */
+.create-page {
+  width: min(100%, 860px);
+  min-width: 0;
+  margin-inline: auto;
+}
+.create-page .page-title-row { margin-bottom: 16px; }
+.create-page .eyebrow { margin-bottom: 4px; }
+.create-page .activity-form-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 22px);
+}
+.create-form-grid > .field,
+.create-form-grid .field { min-width: 0; margin-bottom: 4px; }
+.create-form-grid input,
+.create-form-grid select,
+.create-form-grid textarea { min-width: 0; }
+.create-form-grid textarea { min-height: 62px; resize: vertical; }
+.create-field-wide,
+.create-form-grid .subtasks-editor,
+.create-form-grid .form-submit-row { grid-column: 1 / -1; }
+.create-form-grid .subtasks-editor { min-width: 0; margin-top: 2px; padding-top: 12px; }
+.create-form-grid .subtasks-editor .row-between { align-items: center; }
+.create-form-grid .form-submit-row { margin-top: 4px; }
+.create-form-grid .form-submit-row button { min-width: 180px; }
+.create-form-grid .subtask-fieldset { min-width: 0; }
+.create-form-grid .subtask-fieldset input { max-width: 100%; }
+
+@media (min-width: 761px) and (max-height: 820px) {
+  .main-panel { padding-top: 20px; padding-bottom: 24px; }
+  .create-page .page-title-row { margin-bottom: 10px; }
+  .create-page .page-title-row h1 { font-size: 1.55rem; }
+  .create-page .page-subtitle { font-size: .82rem; }
+  .create-page .activity-form-card { gap: 5px 14px; padding-block: 14px; }
+  .create-form-grid .field label { margin-bottom: 3px; }
+  .create-form-grid textarea { min-height: 52px; }
+  .create-form-grid .subtasks-editor { padding-top: 8px; }
+  .create-form-grid .form-submit-row { margin-top: 0; }
+}
+
+@media (max-width: 760px) {
+  .create-page { width: 100%; }
+  .create-page .page-title-row { margin-bottom: 14px; }
+  .create-page .activity-form-card { padding: 16px; }
+}
+
+@media (max-width: 560px) {
+  .create-page .activity-form-card { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 14px; }
+  .create-field-wide,
+  .create-form-grid .subtasks-editor,
+  .create-form-grid .form-submit-row { grid-column: 1; }
+  .create-form-grid .subtasks-editor .row-between { align-items: flex-start; }
+  .create-form-grid .subtasks-editor .row-between > button { flex: 0 0 auto; }
+  .create-form-grid .form-submit-row { justify-content: stretch; }
+  .create-form-grid .form-submit-row button { width: 100%; }
+}
+
+/* Desktop create-event screen aligned to the supplied MIVO reference. */
+@media (min-width: 761px) {
+  .sidebar { width: 288px; padding: 19px 21px 18px; background: #101d30; }
+  .sidebar .brand { gap: 16px; margin: 0 0 24px; font-size: 1.55rem; font-weight: 750; }
+  .sidebar .brand-mascot { width: 50px; height: 50px; flex: 0 0 50px; border-radius: 13px; background: #fff; }
+  .sidebar .nav { gap: 8px; }
+  .sidebar .nav a { min-height: 60px; gap: 15px; padding: 12px; border-radius: 12px; color: #f3f6fc; font-size: 1rem; font-weight: 500; }
+  .sidebar .nav a.active { background: #1478f8; }
+  .sidebar .nav-icon { width: 24px; flex: 0 0 24px; }
+  .sidebar .nav-icon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .sidebar-footer { margin-inline: -21px; padding: 18px 21px 0; gap: 11px; }
+  .sidebar-footer .avatar { width: 44px; height: 44px; flex-basis: 44px; font-size: 1rem; }
+  .sidebar-footer .user-name { font-size: .82rem; font-weight: 700; }
+  .sidebar-footer .user-limit { font-size: .76rem; }
+  .main-panel:has(.create-page) { margin-left: 288px; padding: 19px 38px 30px; }
+  .page-content:has(.create-page) { width: 100%; }
+  .create-page .create-info-card { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 26px; padding: 27px; }
+  .create-page .create-info-card > .create-name-field,
+  .create-page .create-info-card > .field:nth-child(2) { grid-column: span 3; }
+  .create-page .create-info-card > .create-venue-field,
+  .create-page .create-info-card > .create-date-field,
+  .create-page .create-info-card > .create-time-field { grid-column: span 2; }
+  .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+}
+
+/* Create event screen: two compact cards matching the supplied layout. */
+.create-page { width: min(100%, 1180px); }
+.create-page .create-title { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.create-page .create-title h1 { margin: 0; color: #172033; font-size: 1.65rem; }
+.create-page .create-title .create-section-icon { width: 44px; height: 44px; flex-basis: 44px; border-radius: 12px; background: #dceeff; }
+.create-page > .create-form-grid { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.create-page .create-info-card { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px 16px; padding: 18px; }
+.create-page .create-info-card > .field { grid-column: span 2; margin: 0; }
+.create-page .create-info-card > .create-name-field,
+.create-page .create-info-card > .field:nth-child(2) { grid-column: span 3; }
+.create-page .create-info-card > .create-venue-field { grid-column: span 2; }
+.create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+.create-page .create-info-card textarea { min-height: 62px; }
+.create-page .subtasks-editor { margin: 0; padding: 16px 18px 18px; }
+.create-page .subtasks-editor .row-between { margin-bottom: 8px; }
+.create-page .subtasks-editor .create-section-heading { gap: 12px; }
+.create-page .subtasks-editor .create-section-icon { width: 40px; height: 40px; flex-basis: 40px; }
+.create-page .subtasks-editor .create-section-heading h2 { font-size: 1.1rem; }
+.create-page .subtasks-editor .create-section-heading p { display: none; }
+.create-page .create-empty-tasks { min-height: 90px; background: #f8fbff; }
+.create-page .form-submit-row { margin: 0; }
+.create-page .form-submit-row button { min-width: 180px; }
+@media (max-width: 700px) {
+  .create-page .create-info-card { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+  .create-page .create-info-card > .field,
+  .create-page .create-info-card > .create-name-field,
+  .create-page .create-info-card > .field:nth-child(2),
+  .create-page .create-info-card > .create-venue-field { grid-column: 1 / -1; }
+  .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+  .create-page .subtasks-editor .row-between { align-items: center; }
+  .create-page .form-submit-row button { width: 100%; }
+}
+
+@media (max-width: 380px) {
+  .create-page .activity-form-card { padding: 12px; }
+  .create-page .page-title-row h1 { font-size: 1.45rem; }
+  .create-page .page-subtitle { font-size: .78rem; }
+  .create-form-grid .subtasks-editor .row-between { flex-direction: column; align-items: stretch; }
+  .create-form-grid .subtasks-editor .row-between > button { width: 100%; }
 }
 
 /* MIVO application system */
@@ -567,6 +748,18 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-stat { display: grid; align-content: center; gap: 5px; }
 .progress-stat span { color: #7b8596; font-size: .65rem; }
 .progress-stat strong { font-size: 1.15rem; }
+.event-progress-list h2 { margin: 0 0 14px; }
+.event-progress-items { display: grid; gap: 16px; }
+.event-progress-item { padding-top: 12px; border-top: 1px solid #edf1f6; }
+.event-progress-item:first-child { padding-top: 0; border-top: 0; }
+.event-progress-item .row-between { margin-bottom: 7px; }
+.event-progress-item a { color: #172033; font-weight: 650; text-decoration: none; }
+.event-progress-item a:hover { color: #287cf5; }
+.event-progress-item .progress-label { font-size: .72rem; }
+.event-progress-item .progress-label strong { display: none; }
+.event-progress-complete { display: inline-block; margin: 4px 8px 0 0; color: #15803d; font-size: .75rem; font-weight: 700; }
+.progress-task-toggle { display: inline-flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+.progress-task-toggle input { margin-top: 3px; accent-color: #287cf5; }
 .text-success { color: #15803d; }
 .text-danger { color: #ef4444; }
 .upcoming-deadlines { margin-bottom: 17px; }
@@ -691,3 +884,395 @@ body { background: #f4f8fc; font-family: var(--font); }
   .auth-visual { min-height: 265px; border-radius: 0 0 0 55px; }
   .auth-form-inner h1 { font-size: 2.25rem; }
 }
+
+/* Keep the complete sign-in card visible on desktop-sized viewports. */
+@media (min-width: 761px) {
+  .auth-screen:has(.auth-form-inner:not(.register-form)) {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: clamp(12px, 2.5vh, 24px);
+  }
+  .auth-card:has(.auth-form-inner:not(.register-form)) {
+    height: min(820px, calc(100vh - 2 * clamp(12px, 2.5vh, 24px)));
+    height: min(820px, calc(100svh - 2 * clamp(12px, 2.5vh, 24px)));
+    min-height: 0;
+  }
+  .auth-form-panel:has(.auth-form-inner:not(.register-form)) {
+    min-height: 0;
+    padding: clamp(22px, 4.5vh, 44px) clamp(26px, 3.8vw, 62px);
+  }
+  .auth-form-inner:not(.register-form) { width: min(100%, 590px); }
+  .auth-form-inner:not(.register-form) h1 {
+    margin-bottom: clamp(22px, 4vh, 38px);
+    font-size: clamp(2.2rem, 3.4vw, 3.5rem);
+  }
+  .auth-form-inner:not(.register-form) .field { margin-bottom: clamp(16px, 2.6vh, 24px); }
+  .auth-form-inner:not(.register-form) .field label { font-size: clamp(.9rem, 1.1vw, 1rem); }
+  .auth-form-inner:not(.register-form) input:not([type="checkbox"]) { min-height: 44px; }
+  .auth-form-inner:not(.register-form) .auth-options { margin: 0 0 clamp(20px, 3.5vh, 30px); }
+  .auth-form-inner:not(.register-form) .remember-option { gap: 9px; font-size: .9rem !important; }
+  .auth-form-inner:not(.register-form) .remember-option input { width: 58px !important; height: 32px; }
+  .auth-form-inner:not(.register-form) .remember-option input::after { top: 4px; left: 4px; width: 24px; height: 24px; }
+  .auth-form-inner:not(.register-form) .remember-option input:checked::after { transform: translateX(26px); }
+  .auth-form-inner:not(.register-form) .auth-submit { min-height: 54px; font-size: 1.05rem; }
+  .auth-form-inner:not(.register-form) .auth-switch { margin-top: clamp(18px, 3vh, 28px); font-size: 1rem; }
+  .auth-form-panel:has(.auth-form-inner:not(.register-form)) ~ .auth-visual {
+    min-height: 0;
+    padding: clamp(18px, 3vh, 30px);
+  }
+  .auth-form-panel:has(.auth-form-inner:not(.register-form)) ~ .auth-visual img {
+    width: min(64%, 390px, 34vh);
+  }
+  .auth-form-panel:has(.auth-form-inner:not(.register-form)) ~ .auth-visual .auth-brand {
+    font-size: clamp(2.8rem, 4vw, 4rem);
+  }
+  .auth-form-panel:has(.auth-form-inner:not(.register-form)) ~ .auth-visual p {
+    margin-top: 5px;
+    font-size: clamp(.95rem, 1.4vw, 1.25rem);
+  }
+}
+
+/* Keep registration usable within the viewport at common desktop and mobile sizes. */
+@media (min-width: 761px) {
+  .auth-screen:has(.register-form) {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: clamp(10px, 2vh, 20px);
+  }
+  .auth-card:has(.register-form) {
+    height: min(900px, calc(100vh - 2 * clamp(10px, 2vh, 20px)));
+    height: min(900px, calc(100svh - 2 * clamp(10px, 2vh, 20px)));
+    min-height: 0;
+  }
+  .auth-form-panel:has(.register-form) {
+    min-height: 0;
+    padding: clamp(16px, 3vh, 38px) clamp(26px, 4.6vw, 70px);
+  }
+  .register-form { width: min(100%, 710px); }
+  .register-form h1 { font-size: clamp(2.4rem, 4vw, 4rem); }
+  .register-form .field { margin-bottom: clamp(8px, 1.7vh, 16px) !important; }
+  .register-form .field label { margin-bottom: 0; font-size: clamp(.95rem, 1.2vw, 1.1rem) !important; }
+  .register-form input:not([type="checkbox"]) { min-height: clamp(38px, 5vh, 48px); }
+  .register-form .field-hint { margin-top: 2px; font-size: .78rem; }
+  .register-form .auth-submit { min-height: clamp(48px, 6vh, 58px); }
+  .register-form .auth-switch { margin-top: clamp(10px, 1.8vh, 18px) !important; font-size: clamp(.9rem, 1.2vw, 1.1rem); }
+}
+@media (max-width: 760px) {
+  .auth-screen:has(.register-form) {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 0;
+  }
+  .auth-card:has(.register-form) {
+    display: grid;
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    border-radius: 0;
+  }
+  .auth-form-panel:has(.register-form) {
+    order: 1;
+    min-height: 0;
+    padding: clamp(14px, 3.5vh, 28px) clamp(20px, 6vw, 38px);
+  }
+  .auth-form-panel:has(.register-form) ~ .auth-visual { display: none; }
+  .register-form { width: min(100%, 520px); }
+  .register-form h1 { margin: 0 0 clamp(10px, 2vh, 16px) !important; font-size: clamp(1.8rem, 7vw, 2.4rem) !important; }
+  .register-form .field { margin-bottom: clamp(6px, 1.35vh, 10px) !important; }
+  .register-form .field label { margin-bottom: 0; font-size: .94rem !important; }
+  .register-form input:not([type="checkbox"]) { min-height: clamp(36px, 5vh, 44px); }
+  .register-form .field-hint { margin-top: 1px; font-size: .75rem; }
+  .register-form .auth-submit { min-height: 46px; }
+  .register-form .auth-switch { margin-top: clamp(9px, 1.8vh, 14px) !important; font-size: .92rem; }
+}
+
+/* Keep the creation form within the first view on common laptop heights. */
+.create-page .activity-form-card .field { margin-bottom: 4px; }
+@media (min-width: 761px) and (max-height: 820px) {
+  .main-panel { padding-top: 20px; padding-bottom: 24px; }
+  .create-page .activity-form-card .field { margin-bottom: 2px; }
+}
+
+/* Center only the create screen in the available desktop viewport. */
+@media (min-width: 761px) {
+  .main-panel:has(.create-page) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .main-panel:has(.create-page) .page-content { margin-block: auto; }
+}
+
+/* Give the event form the available desktop width and pair the description with the date. */
+@media (min-width: 761px) {
+  .page-content:has(.create-page) { width: min(100%, 1420px); }
+  .create-page { width: 100%; }
+}
+
+/* Let the create-event workspace use the full content area. */
+@media (min-width: 761px) {
+  .main-panel:has(.create-page) {
+    min-height: 100vh;
+    min-height: 100svh;
+    justify-content: flex-start;
+    padding: clamp(24px, 4vh, 42px) clamp(24px, 4vw, 64px);
+  }
+  .main-panel:has(.create-page) .page-content {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    min-height: 0;
+    flex: 1;
+    margin: 0;
+  }
+  .create-page:has(.activity-form-card) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+  }
+  .create-page .activity-form-card {
+    min-height: 0;
+    flex: 1;
+    align-content: start;
+  }
+  .create-page .subtasks-editor { min-height: 110px; }
+}
+
+/* Match typography between login and registration. */
+.auth-form-inner:not(.recovery-form) h1 {
+  font-size: clamp(2.4rem, 3.4vw, 3.5rem);
+}
+.auth-form-inner:not(.recovery-form) .field label {
+  font-size: 1rem !important;
+}
+.auth-form-inner:not(.recovery-form) input:not([type="checkbox"]),
+.auth-form-inner:not(.recovery-form) select,
+.auth-form-inner:not(.recovery-form) textarea {
+  font-size: 1rem;
+}
+.auth-form-inner:not(.recovery-form) .auth-submit {
+  font-size: 1.05rem;
+}
+.auth-form-inner:not(.recovery-form) .auth-switch,
+.auth-form-inner:not(.recovery-form) .remember-option,
+.auth-form-inner:not(.recovery-form) .forgot-link {
+  font-size: 1rem !important;
+}
+.auth-form-inner:not(.recovery-form) .field-hint {
+  font-size: .8rem;
+}
+.auth-brand {
+  font-size: clamp(2.8rem, 4vw, 4rem);
+}
+
+/* Crear evento: proporciones y jerarquía de la referencia MIVO. */
+.create-page .create-title { gap: 22px; margin-bottom: 22px; }
+.create-page .create-title h1 { font-size: clamp(1.8rem, 2.2vw, 2.2rem); font-weight: 750; letter-spacing: -.035em; }
+.create-page .create-title .create-section-icon { width: 70px; height: 70px; flex-basis: 70px; border-radius: 18px; }
+.create-section-icon svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.create-page > .create-form-grid { gap: 20px; }
+.create-page .create-info-card,
+.create-page .subtasks-editor { border: 0; border-radius: 18px; box-shadow: 0 8px 24px rgba(30, 64, 110, .06); }
+.create-page .create-info-card { gap: 24px 26px; padding: 26px; }
+.create-page .create-info-card label { margin-bottom: 7px; color: #111d35; font-size: 1rem; font-weight: 700; }
+.create-page .create-info-card input,
+.create-page .create-info-card select,
+.create-page .create-info-card textarea,
+.create-page .create-info-card .time-picker-trigger { min-height: 54px; padding: 12px 16px; border: 1.5px solid #d9e3f0; border-radius: 13px; color: #15233d; box-shadow: 0 1px 3px rgba(15, 23, 42, .025); }
+.create-page .create-info-card input::placeholder,
+.create-page .create-info-card textarea::placeholder,
+.create-page .create-info-card .time-picker-trigger.is-placeholder { color: #70809a; opacity: 1; }
+.create-page .create-info-card textarea { min-height: 98px; }
+.create-page .create-info-card .field { margin: 0; }
+.create-page .subtasks-editor { padding: 16px 26px 24px; }
+.create-page .subtasks-editor .row-between { margin-bottom: 14px; }
+.create-page .subtasks-editor .create-section-heading { gap: 18px; }
+.create-page .subtasks-editor .create-section-icon { width: 66px; height: 66px; flex-basis: 66px; }
+.create-page .subtasks-editor .create-section-icon svg { width: 34px; height: 34px; stroke-width: 2.5; }
+.create-page .subtasks-editor .create-section-heading h2 { font-size: 1.4rem; }
+.create-page .subtasks-editor .row-between > button { min-width: 240px; min-height: 56px; font-size: 1rem; }
+.create-page .create-empty-tasks { min-height: 140px; border-color: #e1e8f1; background: #fbfcfe; }
+.create-page .create-empty-tasks > span { display: block; height: 48px; margin-bottom: 4px; }
+.create-page .create-empty-tasks svg { width: 46px; height: 46px; fill: none; stroke: #74849e; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.create-page .create-empty-tasks strong { font-size: 1.1rem; color: #64748b; }
+.create-page .create-empty-tasks p { display: none; }
+.create-page .form-submit-row { padding-top: 0; }
+
+/* Agenda de hoy: tarjetas de eventos y estados claros. */
+.today-page .page-content { width: 100%; }
+.today-page .page-heading { margin-bottom: 24px; }
+.today-page .page-heading h1 { color: #102347; font-size: clamp(1.8rem, 2.4vw, 2.25rem); }
+.today-page .today-filters { grid-template-columns: 1fr 1fr 1.15fr auto; gap: 16px; margin-bottom: 20px; }
+.today-page .today-filters .field label { font-size: .88rem; color: #64748b; }
+.today-page .today-filters select { min-height: 46px; padding: 9px 14px; font-size: .95rem; }
+.today-page .daily-summary { min-height: 94px; grid-template-columns: 120px minmax(160px, 1fr) auto; gap: 18px; margin-bottom: 24px; padding: 16px 22px; border-radius: 16px; }
+.today-page .summary-label { font-size: .87rem; font-weight: 700; }
+.today-page .daily-summary strong { font-size: 1.25rem; }
+.today-page .summary-progress { gap: 10px; font-size: .82rem; }
+.today-page .summary-progress .progress-track { height: 16px; border: 0; background: #edf2f8; }
+.today-page .daily-limit-field { font-size: .87rem; font-weight: 700; }
+.today-page .daily-limit-field input { width: 76px; min-height: 44px; padding: 8px 11px; font-size: 1rem; }
+.today-page .section-title { margin: 20px 0 10px; color: #102347; font-size: 1.2rem; }
+.today-page .section-title > span { min-width: 28px; height: 28px; color: #102347; background: #e9eff7; font-size: .8rem; }
+.today-page .urgent-list { gap: 8px; }
+.today-page .event-card { min-height: 102px; gap: 18px; padding: 17px 22px; border-radius: 16px; }
+.event-type-icon { display: grid; width: 58px; height: 58px; flex: 0 0 58px; place-items: center; border-radius: 50%; color: #1677f9; background: #e5f1ff; font-size: 1.5rem; font-weight: 800; text-decoration: none; }
+.event-icon-overdue { color: #f04452; background: #ffe5e8; }
+.event-icon-pending { color: #efa400; background: #fff3d5; }
+.event-icon-done { color: #08a66b; background: #dcf8ed; }
+.today-page .activity-main { flex: 1; }
+.today-page .activity-title { font-size: 1rem; }
+.today-page .activity-meta { gap: 8px 18px; margin-top: 8px; color: #647895; font-size: .85rem; }
+.today-page .activity-state { min-width: 112px; justify-content: center; padding: 10px 15px; font-size: .83rem; }
+.today-page .state-overdue { color: #ed2939; background: #ffe3e6; }
+.today-page .state-pending { color: #e89b00; background: #fff2d2; }
+.today-page .state-done { color: #089b65; background: #dcf8ed; }
+.event-menu-wrap { position: relative; flex: 0 0 auto; }
+.event-more { padding: 8px; border: 0; color: #102347; background: transparent; font: inherit; font-weight: 800; letter-spacing: 2px; text-decoration: none; cursor: pointer; }
+.event-action-menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; display: grid; min-width: 170px; padding: 6px; border: 1px solid #e3eaf3; border-radius: 10px; background: #fff; box-shadow: 0 10px 28px rgba(23,32,51,.16); }
+.event-action-menu a, .event-action-menu button { padding: 9px 11px; border: 0; border-radius: 6px; color: #102347; background: transparent; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.event-action-menu a:hover, .event-action-menu button:hover:not(:disabled) { background: #f1f6fd; }
+.event-action-menu button:disabled { color: #94a3b8; cursor: wait; }
+.today-page .profile-chip { display: flex; align-items: center; gap: 11px; padding: 8px 13px; border: 1px solid #e3eaf3; border-radius: 14px; color: #102347; background: #fff; text-decoration: none; }
+.today-page .profile-chip .avatar { width: 36px; height: 36px; flex-basis: 36px; }
+.today-page .profile-chip strong, .today-page .profile-chip small { display: block; }
+.today-page .profile-chip strong { color: #1677f9; font-size: .8rem; text-decoration: underline; }
+.today-page .profile-chip small { margin-top: 2px; color: #64748b; font-size: .8rem; }
+@media (min-width: 761px) { .main-panel:has(.today-page) { padding: 30px clamp(24px, 3.2vw, 60px); } .main-panel:has(.today-page) .page-content { width: 100%; max-width: none; } }
+@media (max-width: 760px) {
+  .today-page .today-filters { grid-template-columns: 1fr 1fr; }
+  .today-page .daily-summary { grid-template-columns: 1fr auto; }
+  .today-page .summary-progress { grid-column: 1 / -1; grid-row: 2; }
+  .today-page .event-card { gap: 12px; padding: 14px; }
+  .today-page .activity-state { min-width: auto; padding: 7px 10px; }
+  .event-type-icon { width: 44px; height: 44px; flex-basis: 44px; }
+}
+.create-page .form-submit-row button { min-width: 230px; min-height: 54px; border-radius: 13px; background: #1677f9; font-weight: 700; }
+@media (max-width: 760px) {
+  .create-page .create-info-card { gap: 14px; padding: 18px; }
+  .create-page .create-info-card > .field,
+  .create-page .create-info-card > .create-name-field,
+  .create-page .create-info-card > .field:nth-child(2),
+  .create-page .create-info-card > .create-venue-field,
+  .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+  .create-page .subtasks-editor { padding: 16px; }
+  .create-page .subtasks-editor .row-between > button { min-width: 0; }
+}
+
+/* Create-event form layout inspired by the supplied MIVO reference. */
+.create-form-grid > .create-info-heading { grid-column: 1 / -1; }
+.create-section-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.create-section-heading h2 { margin: 0; color: #172033; font-size: 1.18rem; font-weight: 700; }
+.create-section-heading p { margin: 3px 0 0; color: #71809a; font-size: .92rem; }
+.create-section-icon { display: grid; width: 52px; height: 52px; flex: 0 0 52px; place-items: center; border-radius: 50%; color: #1686ef; background: #e0f4ff; font-size: 1.7rem; }
+.create-plan-icon { color: #853cf0; background: #f0e4ff; }
+.create-form-grid .subtasks-editor { margin-top: 8px; padding-top: 18px; }
+.create-form-grid .subtasks-editor .row-between { margin-bottom: 14px; }
+.create-form-grid .subtasks-editor .row-between > button { min-height: 44px; padding-inline: 20px; border: 1px solid #78aaff; border-radius: 14px; color: #1268e9; background: #fff; }
+.create-empty-tasks { display: flex; min-height: 112px; flex-direction: column; align-items: center; justify-content: center; padding: 14px; border: 1px solid #e0e7f0; border-radius: 12px; color: #64748b; text-align: center; }
+.create-empty-tasks > span { margin-bottom: 4px; font-size: 1.65rem; }
+.create-empty-tasks strong { color: #53647d; font-size: .95rem; }
+.create-empty-tasks p { margin: 2px 0 0; font-size: .84rem; }
+.create-form-grid .form-submit-row button { min-height: 44px; border-radius: 9px; }
+@media (max-width: 560px) {
+  .create-form-grid > .create-info-heading { grid-column: 1; }
+  .create-section-icon { width: 44px; height: 44px; flex-basis: 44px; }
+  .create-section-heading h2 { font-size: 1.05rem; }
+  .create-section-heading p { font-size: .82rem; }
+  .create-form-grid .subtasks-editor .row-between { gap: 12px; }
+}
+
+/* Final sizing for the full create-event reference layout. */
+.create-page .create-info-card textarea { min-height: 98px; }
+.create-page .create-empty-tasks p { display: none; }
+.create-page .create-title .create-section-icon svg { width: 34px; height: 34px; }
+@media (min-width: 761px) {
+  .create-page { flex: 1; }
+  .create-page > .create-form-grid { flex: 1; }
+  .create-page .subtasks-editor { flex: 1; }
+}
+
+/* Keep login and registration headings anchored and styled identically. */
+.auth-form-inner:not(.recovery-form) {
+  display: flex;
+  flex-direction: column;
+}
+.auth-form-inner:not(.recovery-form) h1 {
+  min-height: 1.15em;
+  margin: 0 0 12px !important;
+  color: #102347;
+  font-size: clamp(2.4rem, 3.4vw, 3.5rem) !important;
+  font-weight: 600;
+  letter-spacing: -.055em;
+  line-height: 1.15;
+  text-align: left;
+  text-transform: none;
+}
+.auth-form-inner:not(.recovery-form) .auth-intro { display: none; }
+.auth-form-inner:not(.recovery-form) form { width: 100%; }
+@media (max-width: 760px) {
+  .auth-form-inner:not(.recovery-form) h1 {
+    min-height: 1.15em;
+    margin-bottom: 10px !important;
+    font-size: clamp(2rem, 7vw, 2.55rem) !important;
+  }
+}
+@media (max-width: 760px) {
+  .auth-form-inner:not(.recovery-form) h1 {
+    font-size: clamp(2rem, 7vw, 2.55rem) !important;
+  }
+  .auth-form-inner:not(.recovery-form) .field label {
+    font-size: .94rem !important;
+  }
+  .auth-form-inner:not(.recovery-form) .auth-switch,
+  .auth-form-inner:not(.recovery-form) .remember-option,
+  .auth-form-inner:not(.recovery-form) .forgot-link {
+    font-size: .92rem !important;
+  }
+  .auth-brand { font-size: 3rem; }
+}
+
+/* Final create page sizing overrides, after the shared responsive rules. */
+@media (min-width: 761px) {
+  .create-page .create-title { gap: 22px; margin-bottom: 22px; }
+  .create-page .create-title h1 { font-size: clamp(1.8rem, 2.2vw, 2.2rem); font-weight: 750; letter-spacing: -.035em; }
+  .create-page .create-title .create-section-icon { width: 70px; height: 70px; flex-basis: 70px; border-radius: 18px; }
+  .create-page .create-info-card { gap: 24px 26px; padding: 26px; }
+  .create-page .create-info-card > .create-venue-field { grid-column: span 2; }
+  .create-page .create-info-card > .create-date-field,
+  .create-page .create-info-card > .create-time-field { grid-column: span 2; }
+  .create-page .create-info-card label { margin-bottom: 7px; color: #111d35; font-size: 1rem; font-weight: 700; }
+  .create-page .create-info-card input, .create-page .create-info-card select, .create-page .create-info-card textarea, .create-page .create-info-card .time-picker-trigger { min-height: 54px; padding: 12px 16px; border: 1.5px solid #d9e3f0; border-radius: 13px; color: #15233d; }
+  .create-page .create-info-card textarea { min-height: 98px; }
+  .create-page .create-info-card .field { margin: 0; }
+  .create-page .subtasks-editor { padding: 16px 26px 24px; }
+  .create-page .subtasks-editor .row-between { margin-bottom: 14px; }
+  .create-page .subtasks-editor .create-section-heading { gap: 18px; }
+  .create-page .subtasks-editor .create-section-icon { width: 66px; height: 66px; flex-basis: 66px; }
+  .create-page .subtasks-editor .create-section-heading h2 { font-size: 1.4rem; }
+  .create-page .subtasks-editor .row-between > button { min-width: 240px; min-height: 56px; font-size: 1rem; }
+  .create-page .create-empty-tasks { min-height: 140px; background: #fbfcfe; }
+  .create-page .create-empty-tasks > span { height: 48px; }
+  .create-page .create-empty-tasks strong { font-size: 1.1rem; }
+  .create-page .create-empty-tasks p { display: none; }
+  .create-page .form-submit-row button { min-width: 230px; min-height: 54px; border-radius: 13px; background: #1677f9; }
+}
+.create-section-icon svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.create-page .create-info-card, .create-page .subtasks-editor { border: 0; border-radius: 18px; box-shadow: 0 8px 24px rgba(30, 64, 110, .06); }
+.create-page > .create-form-grid { gap: 20px; }
+.create-page .create-empty-tasks { border-color: #e1e8f1; }
+.create-page .create-empty-tasks svg { width: 46px; height: 46px; fill: none; stroke: #74849e; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.create-page .form-submit-row { padding-top: 0; }
+/* Keep the icon and title together, as in the reference header. */
+.create-page .create-title { justify-content: flex-start; }
+@media (max-width: 760px) {
+  .create-page .create-info-card { gap: 14px; padding: 18px; }
+  .create-page .create-info-card > .field, .create-page .create-info-card > .create-name-field, .create-page .create-info-card > .field:nth-child(2), .create-page .create-info-card > .create-venue-field, .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+  .create-page .subtasks-editor { padding: 16px; }
+  .create-page .subtasks-editor .row-between > button { min-width: 0; }
+}
+

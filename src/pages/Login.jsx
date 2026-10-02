@@ -38,7 +38,6 @@ export default function Login() {
       <div className="auth-form-inner">
         <div className="auth-mobile-logo"><span className="brand-mark">◈</span> MIVO</div>
         <h1>Iniciar sesión</h1>
-        <p className="auth-intro">Ingresa a tu espacio y continúa organizando tus actividades.</p>
         {error && <div className="form-error" role="alert">{error}</div>}
         <form onSubmit={onSubmit} noValidate>
           <div className="field">

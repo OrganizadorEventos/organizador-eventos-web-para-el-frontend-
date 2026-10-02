@@ -4,13 +4,15 @@ import { api, ApiError } from '../api';
 import { LoadingState, EmptyState, ErrorState, SuccessBanner } from '../components/States';
 import ProgressBar from '../components/ProgressBar';
 import Modal from '../components/Modal';
+import TimePicker from '../components/TimePicker';
 import NoteModal from '../components/NoteModal';
 import ConflictoModal from '../components/ConflictoModal';
-import { formatDate, formatHours, formatDateTime } from '../lib/dates';
+import { formatDate, formatHours, formatDateTime, localYMD } from '../lib/dates';
+import { EVENT_TYPES } from '../lib/eventTypes';
 
 const STATUS_META = {
   pending: { label: 'Pendiente', badge: 'badge-urgent' },
-  done: { label: 'Hecha', badge: 'badge-done' },
+  done: { label: 'Completada', badge: 'badge-done' },
   postponed: { label: 'En pausa', badge: 'badge-postponed' },
 };
 
@@ -28,7 +30,7 @@ export default function EventoDetalle() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  const [newTask, setNewTask] = useState({ title: '', scheduledDate: '', estimatedHours: 1 });
+  const [newTask, setNewTask] = useState({ title: '', scheduledDate: localYMD(), estimatedHours: 1 });
   const [showNewTask, setShowNewTask] = useState(false);
 
   const [reprogram, setReprogram] = useState(null); // task
@@ -56,7 +58,7 @@ export default function EventoDetalle() {
 
   useEffect(() => {
     if (event && location.state?.edit) {
-      setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', description: event.description || '' });
+      setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [event, location.pathname, location.state, navigate]);
@@ -90,7 +92,7 @@ export default function EventoDetalle() {
 
   async function addTask() {
     if (newTask.title.trim().length < 2) {
-      setError('La gestión necesita un título de al menos 2 caracteres.');
+      setError('La subtarea necesita un título de al menos 2 caracteres.');
       return;
     }
     const hours = Number(newTask.estimatedHours);
@@ -105,12 +107,12 @@ export default function EventoDetalle() {
         scheduledDate: newTask.scheduledDate || null,
         estimatedHours: hours,
       });
-      setNewTask({ title: '', scheduledDate: '', estimatedHours: 1 });
+      setNewTask({ title: '', scheduledDate: localYMD(), estimatedHours: 1 });
       setShowNewTask(false);
-      flash('Gestión agregada al plan.');
+      flash('Subtarea agregada al plan.');
       load();
     } catch (err) {
-      setError(err?.message || 'No pudimos agregar la gestión.');
+      setError(err?.message || 'No pudimos agregar la subtarea.');
     }
   }
 
@@ -127,7 +129,7 @@ export default function EventoDetalle() {
         estimatedHours: hours,
       });
       setEditTask(null);
-      flash('Gestión actualizada.');
+      flash('Subtarea actualizada.');
       load();
     } catch (err) {
       setError(err?.message || 'No pudimos guardar.');
@@ -139,7 +141,7 @@ export default function EventoDetalle() {
     try {
       await api.del(`/events/${id}/tasks/${confirmDeleteTask.id}`);
       setConfirmDeleteTask(null);
-      flash('Gestión eliminada.');
+      flash('Subtarea eliminada.');
       load();
     } catch (err) {
       setError(err?.message || 'No pudimos eliminar.');
@@ -150,7 +152,7 @@ export default function EventoDetalle() {
   async function onExecute(task, action, note) {
     await api.post(`/events/${id}/tasks/${task.id}/execute`, { action, note });
     setExecuteTask(null);
-    flash(action === 'done' ? '¡Gestión marcada como hecha!' : 'Gestión pospuesta. Quedó en pausa.');
+    flash(action === 'done' ? '¡Subtarea completada!' : action === 'pending' ? 'Subtarea reabierta.' : 'Subtarea pospuesta. Quedó en pausa.');
     load();
   }
 
@@ -163,11 +165,11 @@ export default function EventoDetalle() {
       <div className="row-between">
         <div>
           <h1>{event.name}</h1>
-          <div className="activity-meta detail-meta"><span>{event.course || 'Sin curso'}</span><span>{event.type || 'Actividad'}</span><span>{event.date ? formatDate(event.date) : 'Sin fecha límite'}</span>{event.weight !== null && event.weight !== undefined && <span>{event.weight}% del curso</span>}</div>
+          <div className="activity-meta detail-meta"><span>{event.course || 'Lugar por definir'}</span><span>{event.type || 'Evento'}</span><span>{event.date ? formatDate(event.date) : 'Fecha por definir'}{event.time ? ` · ${event.time}` : ''}</span></div>
           {event.description && <p style={{ color: 'var(--color-text-soft)', margin: 0 }}>{event.description}</p>}
         </div>
         <div className="row">
-          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', description: event.description || '' })}>
+          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' })}>
             Editar
           </button>
           <button type="button" className="btn-danger-ghost btn-sm" onClick={() => setConfirmDelete(true)}>
@@ -186,7 +188,7 @@ export default function EventoDetalle() {
         </div>
         <ProgressBar value={event.progress} showLabel={false} />
         <p className="field-hint" style={{ marginTop: 8 }}>
-          {formatHours(event.doneHours)} de {formatHours(event.totalHours)} horas de gestión completadas
+          {formatHours(event.doneHours)} de {formatHours(event.totalHours)} horas de subtarea completadas
           (las pospuestas no cuentan hasta retomarlas).
         </p>
       </div>
@@ -195,7 +197,7 @@ export default function EventoDetalle() {
         <div className="row-between">
           <h2>Plan de trabajo logístico</h2>
           <button type="button" className="btn-secondary btn-sm" onClick={() => setShowNewTask((v) => !v)}>
-            + Agregar gestión
+            + Agregar subtarea
           </button>
         </div>
 
@@ -203,12 +205,12 @@ export default function EventoDetalle() {
           <div className="card" style={{ borderStyle: 'dashed' }}>
             <div className="row">
               <div className="field" style={{ flex: 2, minWidth: 200 }}>
-                <label htmlFor="nt-title">Título de la gestión</label>
+                <label htmlFor="nt-title">Título de la subtarea</label>
                 <input id="nt-title" type="text" value={newTask.title} onChange={(e) => setNewTask((t) => ({ ...t, title: e.target.value }))} placeholder="Ej: Buscar proveedores" />
               </div>
               <div className="field" style={{ width: 150 }}>
                 <label htmlFor="nt-date">Para el día</label>
-                <input id="nt-date" type="date" value={newTask.scheduledDate} onChange={(e) => setNewTask((t) => ({ ...t, scheduledDate: e.target.value }))} />
+                <div className="activity-fields-row"><input id="nt-date" type="date" value={newTask.scheduledDate} onChange={(e) => setNewTask((t) => ({ ...t, scheduledDate: e.target.value }))} /><button type="button" className="btn-ghost btn-sm" onClick={() => setNewTask((t) => ({ ...t, scheduledDate: localYMD() }))}>Ahora</button></div>
               </div>
               <div className="field" style={{ width: 110 }}>
                 <label htmlFor="nt-hours">Horas est.</label>
@@ -224,8 +226,8 @@ export default function EventoDetalle() {
         {event.tasks.length === 0 ? (
           <EmptyState
             emoji="📝"
-            title="Sin gestiones todavía"
-            text="Agregá subtareas logísticas: reservar salón, enviar invitaciones, confirmar catering, coordinar proveedores…"
+            title="Sin subtareas todavía"
+            text="Agregá subtareas para reservar el espacio, enviar invitaciones, confirmar el catering o coordinar proveedores."
           />
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
@@ -279,13 +281,13 @@ export default function EventoDetalle() {
 
       {event.activities?.length > 0 && (
         <div className="card">
-          <h2>Última actividad</h2>
+          <h2>Últimos cambios</h2>
           <div className="table-wrap">
             <table className="table">
               <thead>
                 <tr>
                   <th scope="col">Cuándo</th>
-                  <th scope="col">Gestión</th>
+                  <th scope="col">Subtarea</th>
                   <th scope="col">Acción</th>
                   <th scope="col">Nota</th>
                 </tr>
@@ -306,14 +308,14 @@ export default function EventoDetalle() {
       )}
 
       {/* Editar evento */}
-      <Modal open={Boolean(editingEvent)} title="Editar actividad" onClose={() => setEditingEvent(null)} labelledBy="edit-event-title">
+      <Modal open={Boolean(editingEvent)} title="Editar evento" onClose={() => setEditingEvent(null)} labelledBy="edit-event-title">
         <div className="field">
           <label htmlFor="ee-name">Nombre del evento</label>
           <input id="ee-name" type="text" value={editingEvent?.name || ''} onChange={(e) => setEditingEvent((ev) => (ev ? { ...ev, name: e.target.value } : ev))} />
         </div>
-        <div className="field"><label htmlFor="ee-type">Tipo</label><input id="ee-type" value={editingEvent?.type || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, type: e.target.value } : ev)} /></div>
-        <div className="row"><div className="field" style={{ flex: 1 }}><label htmlFor="ee-course">Curso</label><input id="ee-course" value={editingEvent?.course || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, course: e.target.value } : ev)} /></div><div className="field" style={{ flex: 1 }}><label htmlFor="ee-weight">Peso (%)</label><input id="ee-weight" type="number" min="0" max="100" step="0.01" value={editingEvent?.weight ?? ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, weight: e.target.value } : ev)} /></div></div>
-        <div className="field"><label htmlFor="ee-date">Fecha límite</label><input id="ee-date" type="date" value={editingEvent?.date || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, date: e.target.value } : ev)} /></div>
+        <div className="field"><label htmlFor="ee-type">Tipo de evento</label><select id="ee-type" value={editingEvent?.type || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, type: e.target.value } : ev)}>{editingEvent?.type && !EVENT_TYPES.includes(editingEvent.type) && <option>{editingEvent.type}</option>}{EVENT_TYPES.map((eventType) => <option key={eventType}>{eventType}</option>)}</select></div>
+        <div className="field"><label htmlFor="ee-course">Lugar o espacio</label><input id="ee-course" value={editingEvent?.course || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, course: e.target.value } : ev)} /></div>
+        <div className="activity-fields-row"><div className="field"><label htmlFor="ee-date">Fecha del evento</label><input id="ee-date" type="date" value={editingEvent?.date || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, date: e.target.value } : ev)} /></div><div className="field"><label htmlFor="ee-time">Hora del evento</label><TimePicker id="ee-time" value={editingEvent?.time || ''} onChange={(time) => setEditingEvent((ev) => ev ? { ...ev, time } : ev)} /></div></div>
         <div className="field">
           <label htmlFor="ee-desc">Descripción</label>
           <textarea id="ee-desc" rows={2} value={editingEvent?.description || ''} onChange={(e) => setEditingEvent((ev) => (ev ? { ...ev, description: e.target.value } : ev))} />
@@ -324,8 +326,8 @@ export default function EventoDetalle() {
         </div>
       </Modal>
 
-      {/* Editar gestión */}
-      <Modal open={Boolean(editTask)} title="Editar gestión" onClose={() => setEditTask(null)} labelledBy="edit-task-title">
+      {/* Editar subtarea */}
+      <Modal open={Boolean(editTask)} title="Editar subtarea" onClose={() => setEditTask(null)} labelledBy="edit-task-title">
         {editTask && (
           <>
             <div className="field">
@@ -352,7 +354,7 @@ export default function EventoDetalle() {
 
       {/* Confirmar eliminar evento */}
       <Modal open={confirmDelete} title="Eliminar evento" onClose={() => setConfirmDelete(false)} labelledBy="del-event-title">
-        <p>Se eliminarán “{event.name}” y todas sus gestiones. Esta acción no se puede deshacer.</p>
+        <p>Se eliminarán “{event.name}” y todas sus subtareas. Esta acción no se puede deshacer.</p>
         <div className="row">
           <button type="button" className="btn-danger" disabled={deleteBusy} onClick={doDeleteEvent}>
             {deleteBusy ? 'Eliminando…' : 'Sí, eliminar'}
@@ -361,8 +363,8 @@ export default function EventoDetalle() {
         </div>
       </Modal>
 
-      {/* Confirmar eliminar gestión */}
-      <Modal open={Boolean(confirmDeleteTask)} title="Quitar gestión" onClose={() => setConfirmDeleteTask(null)} labelledBy="del-task-title">
+      {/* Confirmar eliminar subtarea */}
+      <Modal open={Boolean(confirmDeleteTask)} title="Quitar subtarea" onClose={() => setConfirmDeleteTask(null)} labelledBy="del-task-title">
         <p>¿Quitar “{confirmDeleteTask?.title}” del plan?</p>
         <div className="row">
           <button type="button" className="btn-danger" disabled={busyDeleteTask} onClick={doDeleteTask}>

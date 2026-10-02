@@ -32,7 +32,7 @@ export default function Perfil() {
     <section className="profile-page">
       <header className="page-title-row"><div><p className="eyebrow">MI CUENTA</p><h1>Perfil</h1><p className="page-subtitle">Información y preferencias de tu cuenta.</p></div></header>
       <div className="profile-layout">
-        <div className="card profile-summary"><div className="profile-avatar-large">{user?.name?.charAt(0)?.toUpperCase() || 'M'}</div><h2>{user?.name || 'Estudiante'}</h2><p>{user?.email}</p><span className="badge badge-progress">Estudiante</span></div>
+        <div className="card profile-summary"><div className="profile-avatar-large">{user?.name?.charAt(0)?.toUpperCase() || 'M'}</div><h2>{user?.name || 'Organizador'}</h2><p>{user?.email}</p><span className="badge badge-progress">Organizador de eventos</span></div>
         <form className="card profile-form" onSubmit={save}>
           <h2>Información de la cuenta</h2>
           {error && <div className="form-error" role="alert">{error}</div>}

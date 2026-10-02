@@ -46,22 +46,22 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
       );
       const savedTask = await onVerifyRescheduled?.(task.id);
       if (!savedTask) {
-        setError('La operación respondió, pero no pudimos volver a consultar la gestión para confirmar la fecha guardada.');
+        setError('La operación respondió, pero no pudimos volver a consultar la subtarea para confirmar la fecha guardada.');
         return false;
       }
 
       if (result?.task?.scheduledDate !== requestedDate || savedTask.scheduledDate !== requestedDate) {
         const actualDate = savedTask.scheduledDate || result?.task?.scheduledDate || 'sin fecha';
-        setError(`Solicitaste ${requestedDate}, pero la gestión quedó guardada con fecha ${actualDate}. No se confirmó la reprogramación.`);
+        setError(`Solicitaste ${requestedDate}, pero la subtarea quedó guardada con fecha ${actualDate}. No se confirmó la reprogramación.`);
         return false;
       }
-      onResolved('Gestión reprogramada correctamente.');
+      onResolved('Subtarea reprogramada correctamente.');
       return true;
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.payload?.conflict) {
         setConflict(err.payload.conflict);
       } else {
-        setError(err?.message || 'No pudimos reprogramar la gestión.');
+        setError(err?.message || 'No pudimos reprogramar la subtarea.');
       }
       return false;
     } finally {
@@ -101,10 +101,10 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
     setError('');
     try {
       await api.post(`/events/${eventId}/tasks/${task.id}/execute`, { action: 'postponed', note: 'Pospuesta para resolver el conflicto de horario.' });
-      onResolved('La gestión quedó en pausa. Elegí otra fecha cuando retomes.');
+      onResolved('La subtarea quedó en pausa. Elegí otra fecha cuando retomes.');
       onClose();
     } catch (err) {
-      setError(err?.message || 'No pudimos posponer la gestión.');
+      setError(err?.message || 'No pudimos posponer la subtarea.');
       setBusy(false);
     }
   }
@@ -112,7 +112,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
   const reductionImpossible = conflict && conflict.otherHours >= conflict.dailyLimit;
 
   return (
-    <Modal open={open} title="Reprogramar gestión" onClose={onClose} labelledBy={HEADING}>
+    <Modal open={open} title="Reprogramar subtarea" onClose={onClose} labelledBy={HEADING}>
       <p>
         <strong>“{task?.title}”</strong> · {formatHours(task?.estimatedHours)} estimadas · {task?.scheduledDate ? formatDate(task.scheduledDate) : 'sin fecha'}
       </p>
@@ -180,9 +180,9 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
           </div>
           <p>{conflict.message}</p>
           <p className="field-hint">
-            Hay <strong>{formatHours(conflict.scheduledHours)}</strong> de gestiones pendientes el{' '}
+            Hay <strong>{formatHours(conflict.scheduledHours)}</strong> de subtareas pendientes el{' '}
             {formatDate(conflict.date)} y tu límite es <strong>{formatHours(conflict.dailyLimit)}</strong>.
-            Quedan {formatHours(conflict.otherHours)} de otras gestiones ese día.
+            Quedan {formatHours(conflict.otherHours)} de otras subtareas ese día.
           </p>
 
           <p style={{ fontWeight: 700, marginTop: 12 }}>¿Cómo querés resolverlo?</p>
@@ -190,7 +190,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
           {/* Alternativa 1: otro día */}
           <div className="conflict-alt">
             <h4>Mover a otra fecha</h4>
-            <p className="field-hint">Días sin conflicto para mover esta gestión:</p>
+            <p className="field-hint">Días sin conflicto para mover esta subtarea:</p>
             <div className="alt-suggested">
               {conflict.alternatives
                 .find((a) => a.id === 'another_day')
@@ -214,13 +214,13 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
             <h4>Reducir horas estimadas</h4>
             {reductionImpossible ? (
               <p className="field-error">
-                Ya hay {formatHours(conflict.otherHours)} de otras gestiones ese día (igual al límite), así que
+                Ya hay {formatHours(conflict.otherHours)} de otras subtareas ese día (igual al límite), así que
                 recortar esta no alcanza. Probá mover de fecha.
               </p>
             ) : (
               <>
                 <p className="field-hint">
-                  Para entrar en el límite, esta gestión debe ocupar a lo sumo{' '}
+                  Para entrar en el límite, esta subtarea debe ocupar a lo sumo{' '}
                   <strong>{formatHours(conflict.maxAllowedHours)}</strong>.
                 </p>
                 <div className="row">
@@ -230,7 +230,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
                     max="24"
                     step="any"
                     style={{ width: 120 }}
-                    aria-label="Horas reducidas para la gestión"
+                    aria-label="Horas reducidas para la subtarea"
                     value={newHours}
                     onChange={(e) => setNewHours(e.target.value)}
                   />
@@ -244,7 +244,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
 
           {/* Alternativa 3: posponer */}
           <div className="conflict-alt">
-            <h4>Posponer la gestión</h4>
+            <h4>Posponer la subtarea</h4>
             <p className="field-hint">La sacás del plan activo hoy; seguirá visible como “en pausa”.</p>
             <button type="button" className="btn-ghost" disabled={busy} onClick={postpone}>
               Posponer

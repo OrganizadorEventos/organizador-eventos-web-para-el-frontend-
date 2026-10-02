@@ -11,6 +11,7 @@ export default function Progreso() {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -43,6 +44,27 @@ export default function Progreso() {
 
   useEffect(() => { loadDetail(); }, [loadDetail]);
 
+  async function setTaskCompleted(task, completed) {
+    if (!detail || updatingTaskId !== null) return;
+    setUpdatingTaskId(task.id);
+    setError('');
+    try {
+      await api.post(`/events/${detail.id}/tasks/${task.id}/execute`, {
+        action: completed ? 'done' : 'pending',
+      });
+      const [{ events: list }, { event }] = await Promise.all([
+        api.get(`/events?date=${localYMD()}`),
+        api.get(`/events/${detail.id}`),
+      ]);
+      setEvents(list);
+      setDetail(event);
+    } catch (err) {
+      setError(err?.message || 'No pudimos actualizar la subtarea.');
+    } finally {
+      setUpdatingTaskId(null);
+    }
+  }
+
   if (loading) return <LoadingState label="Cargando el progreso…" />;
   if (error && !events) return <ErrorState message={error} onRetry={loadEvents} />;
   if (!events) return null;
@@ -50,12 +72,12 @@ export default function Progreso() {
   if (events.length === 0) {
     return (
       <div>
-      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso</h1><p className="page-subtitle">Visualiza tu rendimiento y el tiempo de tus actividades.</p></div></header>
+      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso de eventos</h1><p className="page-subtitle">Consulta el avance de las subtareas de tus eventos.</p></div></header>
         <div className="card">
           <EmptyState
             emoji="📊"
             title="Sin eventos para medir"
-            text="Creá un evento para ver aquí la barra de progreso de su preparación."
+            text="Creá un evento para ver aquí el progreso de sus subtareas."
           >
             <Link to="/crear" className="btn-secondary" style={{ textDecoration: 'none' }}>Crear evento</Link>
           </EmptyState>
@@ -64,13 +86,13 @@ export default function Progreso() {
     );
   }
 
-  const totalActivities = events.reduce((sum, event) => sum + Number(event.taskCount || 0), 0);
-  const completedActivities = events.reduce((sum, event) => sum + Number(event.doneCount || 0), 0);
-  const pendingActivities = events.reduce((sum, event) => sum + Number(event.pendingCount || 0), 0);
-  const overdueActivities = events.reduce((sum, event) => sum + Number(event.overdueCount || 0), 0);
+  const totalTasks = events.reduce((sum, event) => sum + Number(event.taskCount || 0), 0);
+  const completedTasks = events.reduce((sum, event) => sum + Number(event.doneCount || 0), 0);
+  const pendingTasks = events.reduce((sum, event) => sum + Number(event.pendingCount || 0), 0);
+  const overdueTasks = events.reduce((sum, event) => sum + Number(event.overdueCount || 0), 0);
   const plannedHours = events.reduce((sum, event) => sum + Number(event.totalHours || 0), 0);
   const doneHours = events.reduce((sum, event) => sum + Number(event.doneHours || 0), 0);
-  const overallProgress = plannedHours ? Math.round(doneHours / plannedHours * 100) : 0;
+  const overallProgress = totalTasks ? Math.round(completedTasks / totalTasks * 100) : 0;
   const upcomingEvents = [...events].filter((event) => event.date && event.date >= localYMD()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   const done = detail ? detail.tasks.filter((t) => t.status === 'done') : [];
   const pending = detail ? detail.tasks.filter((t) => t.status === 'pending') : [];
@@ -78,19 +100,35 @@ export default function Progreso() {
 
   return (
     <div>
-      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso</h1><p className="page-subtitle">Visualiza tu rendimiento y el tiempo de tus actividades.</p></div></header>
-      <p className="page-subtitle">Resumen de tus actividades completadas, pendientes y vencidas.</p>
+      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso de eventos</h1><p className="page-subtitle">Visualiza el avance y el tiempo dedicado a la organización.</p></div></header>
+      <p className="page-subtitle">Resumen de subtareas completadas, pendientes y vencidas.</p>
 
       <section className="progress-overview">
-        <div className="card progress-total-card"><div className="progress-ring" style={{ '--progress-value': `${overallProgress}%` }}><span>{overallProgress}%</span></div><div><strong>Progreso general</strong><p>{formatHours(doneHours)} de {formatHours(plannedHours)} horas completadas</p></div></div>
-        <div className="card progress-stat"><span>Actividades</span><strong>{totalActivities}</strong></div>
-        <div className="card progress-stat"><span>Completadas</span><strong className="text-success">{completedActivities}</strong></div>
-        <div className="card progress-stat"><span>Pendientes</span><strong>{pendingActivities}</strong></div>
-        <div className="card progress-stat"><span>Vencidas</span><strong className="text-danger">{overdueActivities}</strong></div>
+        <div className="card progress-total-card"><div className="progress-ring" style={{ '--progress-value': `${overallProgress}%` }}><span>{overallProgress}%</span></div><div><strong>Progreso general</strong><p>{completedTasks} de {totalTasks} subtareas completadas</p><p>{formatHours(doneHours)} de {formatHours(plannedHours)} horas completadas</p></div></div>
+        <div className="card progress-stat"><span>Subtareas planificadas</span><strong>{totalTasks}</strong></div>
+        <div className="card progress-stat"><span>Completadas</span><strong className="text-success">{completedTasks}</strong></div>
+        <div className="card progress-stat"><span>Pendientes</span><strong>{pendingTasks}</strong></div>
+        <div className="card progress-stat"><span>Vencidas</span><strong className="text-danger">{overdueTasks}</strong></div>
+      </section>
+      <section className="card event-progress-list">
+        <h2>Progreso por evento</h2>
+        <div className="event-progress-items">
+          {events.map((event) => (
+            <article className="event-progress-item" key={event.id}>
+              <div className="row-between">
+                <Link to={`/evento/${event.id}`}>{event.name}</Link>
+                <strong>{event.progress}%</strong>
+              </div>
+              <ProgressBar value={event.progress} label={`${event.doneCount || 0} de ${event.taskCount || 0} subtareas · ${formatHours(event.doneHours)} de ${formatHours(event.totalHours)}`} />
+              {Number(event.taskCount) > 0 && Number(event.doneCount) === Number(event.taskCount) && <span className="event-progress-complete">✓ Completado</span>}
+              <button type="button" className="btn-secondary btn-sm" onClick={() => { setSelectedId(String(event.id)); document.getElementById('progress-event-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Ver subtareas</button>
+            </article>
+          ))}
+        </div>
       </section>
       {upcomingEvents.length > 0 && <section className="card upcoming-deadlines"><div className="row-between"><h2>Próximos vencimientos</h2><Link to="/eventos">Ver todas</Link></div><ul>{upcomingEvents.map((event) => <li key={event.id}><span className="deadline-dot" /><Link to={`/evento/${event.id}`}>{event.name}</Link><span>{formatDate(event.date)}</span></li>)}</ul></section>}
       <div className="card">
-        <label htmlFor="progress-select">Elige una actividad</label>
+        <label htmlFor="progress-select">Elige un evento</label>
         <select id="progress-select" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
           {events.map((ev) => (
             <option key={ev.id} value={ev.id}>{ev.name} — {ev.progress}%</option>
@@ -102,7 +140,7 @@ export default function Progreso() {
 
       {detail && (
         <>
-          <div className="card">
+          <div className="card" id="progress-event-detail">
             <div className="row-between">
               <div>
                 <h2 style={{ margin: 0 }}>{detail.name}</h2>
@@ -113,12 +151,12 @@ export default function Progreso() {
               </Link>
             </div>
             <div style={{ marginTop: 14 }}>
-              <ProgressBar value={detail.progress} label="Preparación del evento" />
+              <ProgressBar value={detail.progress} label="Progreso del evento" />
             </div>
             <div className="row" style={{ marginTop: 14, gap: 16 }}>
               <div>
                 <strong>{formatHours(detail.doneHours)}</strong>
-                <span className="field-hint"> horas hechas</span>
+                <span className="field-hint"> horas de subtarea completadas</span>
               </div>
               <div>
                 <strong>{formatHours(detail.totalHours)}</strong>
@@ -126,7 +164,7 @@ export default function Progreso() {
               </div>
               <div>
                 <strong>{detail.tasks.length}</strong>
-                <span className="field-hint"> gestiones totales</span>
+                <span className="field-hint"> subtareas totales</span>
               </div>
               <div>
                 <strong>{pending.length}</strong>
@@ -139,18 +177,19 @@ export default function Progreso() {
             </div>
           </div>
 
+          {detail.tasks.length === 0 ? (
+            <div className="card"><p className="field-hint" style={{ margin: 0 }}>Este evento no tiene subtareas agregadas.</p></div>
+          ) : <>
           <div className="row" style={{ alignItems: 'flex-start' }}>
             <div className="card" style={{ flex: 1, minWidth: 260 }}>
-              <h2>Hechas ✅</h2>
+              <h2>Completadas ✅</h2>
               {done.length === 0 ? (
-                <p className="field-hint">Todavía no registraste gestiones hechas.</p>
+                <p className="field-hint">Todavía no registraste subtareas completadas.</p>
               ) : (
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
                   {done.map((t) => (
                     <li key={t.id} style={{ marginBottom: 6 }}>
-                      <strong>{t.title}</strong>
-                      {t.note && <span className="field-hint"> — {t.note}</span>}
-                      <span className="field-hint"> ({formatHours(t.estimatedHours)})</span>
+                      <label className="progress-task-toggle"><input type="checkbox" checked disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, false)} /><span><strong>{t.title}</strong>{t.note && <span className="field-hint"> — {t.note}</span>}<span className="field-hint"> ({formatHours(t.estimatedHours)}h)</span></span></label>
                     </li>
                   ))}
                 </ul>
@@ -165,8 +204,7 @@ export default function Progreso() {
                 <ul style={{ margin: 0, paddingLeft: 20 }}>
                   {pending.map((t) => (
                     <li key={t.id} style={{ marginBottom: 6 }}>
-                      <strong>{t.title}</strong>
-                      <span className="field-hint"> · {t.scheduledDate ? formatDate(t.scheduledDate) : 'sin fecha'} · {formatHours(t.estimatedHours)}</span>
+                      <label className="progress-task-toggle"><input type="checkbox" disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, true)} /><span><strong>{t.title}</strong><span className="field-hint"> · {t.scheduledDate ? formatDate(t.scheduledDate) : 'sin fecha'} · {formatHours(t.estimatedHours)}h</span></span></label>
                     </li>
                   ))}
                 </ul>
@@ -181,13 +219,13 @@ export default function Progreso() {
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 {postponed.map((t) => (
                   <li key={t.id} style={{ marginBottom: 6 }}>
-                    <strong>{t.title}</strong>
-                    {t.note && <span className="field-hint"> — {t.note}</span>}
+                    <label className="progress-task-toggle"><input type="checkbox" disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, true)} /><span><strong>{t.title}</strong>{t.note && <span className="field-hint"> — {t.note}</span>}</span></label>
                   </li>
                 ))}
               </ul>
             </div>
           )}
+          </>}
 
           {detail.activities?.length > 0 && (
             <div className="card">
@@ -197,7 +235,7 @@ export default function Progreso() {
                   <thead>
                     <tr>
                       <th scope="col">Cuándo</th>
-                      <th scope="col">Gestión</th>
+                      <th scope="col">Subtarea</th>
                       <th scope="col">Acción</th>
                       <th scope="col">Nota</th>
                     </tr>
@@ -228,5 +266,6 @@ const ACTION_LABEL = {
   done: 'Marcada hecha',
   postponed: 'Pospuesta',
   edited: 'Editada',
+  pending: 'Reabierta',
   deleted: 'Eliminada',
 };
