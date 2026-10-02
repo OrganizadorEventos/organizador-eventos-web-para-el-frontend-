@@ -16,7 +16,7 @@ export default function Crear() {
   const [weight, setWeight] = useState('');
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
-  const [tasks, setTasks] = useState([newTask()]);
+  const [tasks, setTasks] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -33,7 +33,7 @@ export default function Crear() {
     if (weight !== '' && (!Number.isFinite(Number(weight)) || Number(weight) < 0 || Number(weight) > 100)) return setError('El peso debe estar entre 0 y 100.');
     const cleanTasks = tasks.map((task) => ({ title: task.title.trim(), scheduledDate: task.scheduledDate, estimatedHours: Number(task.estimatedHours) }));
     const invalid = cleanTasks.find((task) => task.title.length < 2 || !task.scheduledDate || !Number.isFinite(task.estimatedHours) || task.estimatedHours <= 0);
-    if (!cleanTasks.length || invalid) return setError('Completa cada subtarea con título, fecha y horas estimadas mayores que 0.');
+    if (invalid) return setError('Completa cada subtarea con título, fecha y horas estimadas mayores que 0.');
     setBusy(true);
     try {
       const { event } = await api.post('/events', {
@@ -63,7 +63,7 @@ export default function Crear() {
         <div className="field"><label htmlFor="activity-description">Descripción (opcional)</label><textarea id="activity-description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añade información útil para completar la actividad." /></div>
         <section className="subtasks-editor">
           <div className="row-between"><div><h2>Subtareas</h2><p className="field-hint">Divide la actividad en pasos que puedas planificar.</p></div><button type="button" className="btn-ghost btn-sm" onClick={() => setTasks((items) => [...items, newTask()])}>＋ Agregar subtarea</button></div>
-          {tasks.map((task, index) => <fieldset className="subtask-fieldset" key={task.key}><legend>Subtarea {index + 1}</legend><div className="field"><label htmlFor={`subtask-title-${task.key}`}>Título *</label><input id={`subtask-title-${task.key}`} value={task.title} onChange={(e) => updateTask(task.key, { title: e.target.value })} placeholder="Ej. Revisar los ejercicios 1–5" /></div><div className="activity-fields-row"><div className="field"><label htmlFor={`subtask-date-${task.key}`}>Fecha</label><input id={`subtask-date-${task.key}`} type="date" value={task.scheduledDate} onChange={(e) => updateTask(task.key, { scheduledDate: e.target.value })} /></div><div className="field"><label htmlFor={`subtask-hours-${task.key}`}>Tiempo estimado (h)</label><input id={`subtask-hours-${task.key}`} type="number" min="0" step="any" value={task.estimatedHours} onChange={(e) => updateTask(task.key, { estimatedHours: e.target.value })} /></div></div>{tasks.length > 1 && <button type="button" className="subtask-remove" onClick={() => setTasks((items) => items.filter((item) => item.key !== task.key))}>Quitar subtarea</button>}</fieldset>)}
+          {tasks.map((task, index) => <fieldset className="subtask-fieldset" key={task.key}><legend>Subtarea {index + 1}</legend><div className="field"><label htmlFor={`subtask-title-${task.key}`}>Título *</label><input id={`subtask-title-${task.key}`} value={task.title} onChange={(e) => updateTask(task.key, { title: e.target.value })} placeholder="Ej. Revisar los ejercicios 1–5" /></div><div className="activity-fields-row"><div className="field"><label htmlFor={`subtask-date-${task.key}`}>Fecha</label><input id={`subtask-date-${task.key}`} type="date" value={task.scheduledDate} onChange={(e) => updateTask(task.key, { scheduledDate: e.target.value })} /></div><div className="field"><label htmlFor={`subtask-hours-${task.key}`}>Tiempo estimado (h)</label><input id={`subtask-hours-${task.key}`} type="number" min="0" step="any" value={task.estimatedHours} onChange={(e) => updateTask(task.key, { estimatedHours: e.target.value })} /></div></div><button type="button" className="subtask-remove" onClick={() => setTasks((items) => items.filter((item) => item.key !== task.key))}>Quitar subtarea</button></fieldset>)}
         </section>
         <div className="form-submit-row"><button type="submit" disabled={busy}>{busy ? 'Creando…' : 'Crear actividad'}</button></div>
       </form>
