@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { LoadingState, EmptyState, ErrorState } from '../components/States';
 import ProgressBar from '../components/ProgressBar';
-import { formatDate, formatHours, formatDateTime } from '../lib/dates';
+import { formatDate, formatHours, formatDateTime, localYMD } from '../lib/dates';
 
 export default function Progreso() {
   const [events, setEvents] = useState(null);
@@ -16,7 +16,7 @@ export default function Progreso() {
     setLoading(true);
     setError('');
     try {
-      const { events: list } = await api.get('/events');
+      const { events: list } = await api.get(`/events?date=${localYMD()}`);
       setEvents(list);
       if (list.length && !list.some((e) => e.id === Number(selectedId))) {
         setSelectedId(String(list[0].id));
@@ -50,7 +50,7 @@ export default function Progreso() {
   if (events.length === 0) {
     return (
       <div>
-        <h1>Progreso</h1>
+      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso</h1><p className="page-subtitle">Visualiza tu rendimiento y el tiempo de tus actividades.</p></div></header>
         <div className="card">
           <EmptyState
             emoji="📊"
@@ -64,19 +64,33 @@ export default function Progreso() {
     );
   }
 
+  const totalActivities = events.reduce((sum, event) => sum + Number(event.taskCount || 0), 0);
+  const completedActivities = events.reduce((sum, event) => sum + Number(event.doneCount || 0), 0);
+  const pendingActivities = events.reduce((sum, event) => sum + Number(event.pendingCount || 0), 0);
+  const overdueActivities = events.reduce((sum, event) => sum + Number(event.overdueCount || 0), 0);
+  const plannedHours = events.reduce((sum, event) => sum + Number(event.totalHours || 0), 0);
+  const doneHours = events.reduce((sum, event) => sum + Number(event.doneHours || 0), 0);
+  const overallProgress = plannedHours ? Math.round(doneHours / plannedHours * 100) : 0;
+  const upcomingEvents = [...events].filter((event) => event.date && event.date >= localYMD()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
   const done = detail ? detail.tasks.filter((t) => t.status === 'done') : [];
   const pending = detail ? detail.tasks.filter((t) => t.status === 'pending') : [];
   const postponed = detail ? detail.tasks.filter((t) => t.status === 'postponed') : [];
 
   return (
     <div>
-      <h1>Progreso de preparación</h1>
-      <p style={{ color: 'var(--color-text-soft)' }}>
-        Cuánto del plan logístico está ejecutado. Se calcula con horas: hechas / (hechas + pendientes).
-      </p>
+      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso</h1><p className="page-subtitle">Visualiza tu rendimiento y el tiempo de tus actividades.</p></div></header>
+      <p className="page-subtitle">Resumen de tus actividades completadas, pendientes y vencidas.</p>
 
+      <section className="progress-overview">
+        <div className="card progress-total-card"><div className="progress-ring" style={{ '--progress-value': `${overallProgress}%` }}><span>{overallProgress}%</span></div><div><strong>Progreso general</strong><p>{formatHours(doneHours)} de {formatHours(plannedHours)} horas completadas</p></div></div>
+        <div className="card progress-stat"><span>Actividades</span><strong>{totalActivities}</strong></div>
+        <div className="card progress-stat"><span>Completadas</span><strong className="text-success">{completedActivities}</strong></div>
+        <div className="card progress-stat"><span>Pendientes</span><strong>{pendingActivities}</strong></div>
+        <div className="card progress-stat"><span>Vencidas</span><strong className="text-danger">{overdueActivities}</strong></div>
+      </section>
+      {upcomingEvents.length > 0 && <section className="card upcoming-deadlines"><div className="row-between"><h2>Próximos vencimientos</h2><Link to="/eventos">Ver todas</Link></div><ul>{upcomingEvents.map((event) => <li key={event.id}><span className="deadline-dot" /><Link to={`/evento/${event.id}`}>{event.name}</Link><span>{formatDate(event.date)}</span></li>)}</ul></section>}
       <div className="card">
-        <label htmlFor="progress-select">Elegí el evento</label>
+        <label htmlFor="progress-select">Elige una actividad</label>
         <select id="progress-select" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
           {events.map((ev) => (
             <option key={ev.id} value={ev.id}>{ev.name} — {ev.progress}%</option>

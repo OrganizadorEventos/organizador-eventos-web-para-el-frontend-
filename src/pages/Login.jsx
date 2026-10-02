@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { ApiError } from '../api';
+import AuthLayout from '../components/AuthLayout';
 
 export default function Login() {
-  const { login, demo } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || '/hoy';
-
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('mivo-email') || localStorage.getItem('floz-email') || '');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(Boolean(localStorage.getItem('mivo-email') || localStorage.getItem('floz-email')));
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -20,81 +22,46 @@ export default function Login() {
     setBusy(true);
     try {
       await login(email, password);
+      if (remember) localStorage.setItem('mivo-email', email);
+      else localStorage.removeItem('mivo-email');
+      localStorage.removeItem('floz-email');
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Ingreso no disponible.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onDemo() {
-    setError('');
-    setBusy(true);
-    try {
-      await demo();
-      navigate('/hoy', { replace: true });
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No pudimos entrar con el usuario demo.');
+      setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión. Inténtalo de nuevo.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="app-shell" style={{ maxWidth: 420, margin: '0 auto' }}>
-      <div className="card" style={{ marginTop: 48 }}>
-        <h1>Bienvenida/o 👋</h1>
-        <p style={{ color: 'var(--color-text-soft)' }}>
-          Organizá tus eventos sin perder de vista las gestiones de hoy.
-        </p>
-
-        {error && (
-          <div className="form-error" role="alert">{error}</div>
-        )}
-
+    <AuthLayout>
+      <div className="auth-form-inner">
+        <div className="auth-mobile-logo"><span className="brand-mark">◈</span> MIVO</div>
+        <h1>Iniciar sesión</h1>
+        <p className="auth-intro">Ingresa a tu espacio y continúa organizando tus actividades.</p>
+        {error && <div className="form-error" role="alert">{error}</div>}
         <form onSubmit={onSubmit} noValidate>
           <div className="field">
             <label htmlFor="login-email">Correo electrónico</label>
-            <input
-              id="login-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="field">
             <label htmlFor="login-password">Contraseña</label>
-            <input
-              id="login-password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="password-field">
+              <input id="login-password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <button className="password-toggle" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                {showPassword ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8M9.9 5.2A10.7 10.7 0 0112 5c6.4 0 10 7 10 7a15 15 0 01-3 3.7M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.1 0 2.1-.2 3-.5"/></svg>}
+              </button>
+            </div>
           </div>
-          <button type="submit" disabled={busy}>
-            {busy ? 'Ingresando…' : 'Ingresar'}
-          </button>
+          <div className="auth-options">
+            <label className="remember-option"><input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} /> Recordarme</label>
+            <Link className="forgot-link" to="/recuperar">¿Olvidaste tu contraseña?</Link>
+          </div>
+          <button className="auth-submit" type="submit" disabled={busy}>{busy ? 'Ingresando…' : 'Iniciar sesión'}</button>
         </form>
-
-        <hr style={{ margin: '18px 0', border: 'none', borderTop: '1px solid var(--color-border)' }} />
-
-        <button type="button" className="btn-secondary" onClick={onDemo} disabled={busy}>
-          Entrar con usuario demo (Sprint 0–1)
-        </button>
-        <p className="field-hint">
-          El demo viene precargado con eventos y gestiones para probar la app al instante.
-        </p>
-
-        <p style={{ marginTop: 14, fontSize: '0.95rem' }}>
-          ¿No tenés cuenta?{' '}
-          <Link to="/registro">Crear cuenta</Link>
-        </p>
+        <p className="auth-switch">¿No tienes una cuenta? <Link to="/registro">Regístrate aquí</Link></p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

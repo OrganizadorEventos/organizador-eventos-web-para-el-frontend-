@@ -34,10 +34,15 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
         setError('La fecha seleccionada no tiene el formato AAAA-MM-DD.');
         return false;
       }
+      const requestedHours = Number(payload?.newHours);
+      if (!Number.isFinite(requestedHours) || requestedHours <= 0) {
+        setError('Las horas estimadas deben ser mayores que 0.');
+        return false;
+      }
 
       const result = await api.post(
         `/events/${eventId}/tasks/${task.id}/reschedule`,
-        { ...payload, newDate: requestedDate },
+        { ...payload, newDate: requestedDate, newHours: requestedHours },
       );
       const savedTask = await onVerifyRescheduled?.(task.id);
       if (!savedTask) {
@@ -70,24 +75,24 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
       setError('Elegí la nueva fecha (AAAA-MM-DD).');
       return;
     }
-    const hours = Number(newHours) || task?.estimatedHours || 1;
+    const hours = Number(newHours);
     const ok = await reschedule({ newDate, newHours: hours });
     if (ok) onClose();
   }
 
   async function moveTo(date) {
-    const ok = await reschedule({ newDate: date, newHours: Number(newHours) || task?.estimatedHours || 1 });
+    const ok = await reschedule({ newDate: date, newHours: Number(newHours) });
     if (ok) onClose();
   }
 
   async function applyReducedHours() {
-    const hours = Number(newHours) || conflict.maxAllowedHours;
+    const hours = Number(newHours);
     const ok = await reschedule({ newDate: conflict.date, newHours: hours });
     if (ok) onClose();
   }
 
   async function acceptAnyway() {
-    const ok = await reschedule({ newDate: conflict.date, newHours: Number(newHours) || task?.estimatedHours || 1, acceptConflict: true });
+    const ok = await reschedule({ newDate: conflict.date, newHours: Number(newHours), acceptConflict: true });
     if (ok) onClose();
   }
 
@@ -153,9 +158,9 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
               <input
                 id={`rd-${task?.id}-hours`}
                 type="number"
-                min="0.25"
+                min="0"
                 max="24"
-                step="0.25"
+                step="any"
                 value={newHours}
                 onChange={(e) => setNewHours(e.target.value)}
               />
@@ -221,9 +226,9 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
                 <div className="row">
                   <input
                     type="number"
-                    min="0.25"
+                    min="0"
                     max="24"
-                    step="0.25"
+                    step="any"
                     style={{ width: 120 }}
                     aria-label="Horas reducidas para la gestión"
                     value={newHours}

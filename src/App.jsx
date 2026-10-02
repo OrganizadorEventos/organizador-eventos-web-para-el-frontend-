@@ -3,11 +3,14 @@ import { useAuth } from './auth';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Recuperar from './pages/Recuperar';
+import Restablecer from './pages/Restablecer';
 import Hoy from './pages/Hoy';
 import Crear from './pages/Crear';
 import Eventos from './pages/Eventos';
 import EventoDetalle from './pages/EventoDetalle';
 import Progreso from './pages/Progreso';
+import Perfil from './pages/Perfil';
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -38,6 +41,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
       <Route path="/registro" element={<GuestOnly><Register /></GuestOnly>} />
+      <Route path="/recuperar" element={<GuestOnly><Recuperar /></GuestOnly>} />
+      <Route path="/restablecer" element={<GuestOnly><Restablecer /></GuestOnly>} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route path="/" element={<Navigate to="/hoy" replace />} />
         <Route path="/hoy" element={<Hoy />} />
@@ -45,6 +50,7 @@ export default function App() {
         <Route path="/eventos" element={<Eventos />} />
         <Route path="/evento/:id" element={<EventoDetalle />} />
         <Route path="/progreso" element={<Progreso />} />
+        <Route path="/perfil" element={<Perfil />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

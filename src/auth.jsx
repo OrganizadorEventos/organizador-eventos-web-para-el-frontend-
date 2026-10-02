@@ -47,11 +47,8 @@ export function AuthProvider({ children }) {
     return data.user;
   }, [applySession]);
 
-  const demo = useCallback(async () => {
-    const data = await api.post('/auth/demo', {});
-    applySession(data);
-    return data.user;
-  }, [applySession]);
+  const requestPasswordReset = useCallback((email) => api.post('/auth/forgot-password', { email }), []);
+  const resetPassword = useCallback((token, password) => api.post('/auth/reset-password', { token, password }), []);
 
   const updateUser = useCallback((patch) => {
     const next = { ...user, ...patch };
@@ -64,12 +61,18 @@ export function AuthProvider({ children }) {
     return me;
   }, []);
 
+  const updateProfile = useCallback(async (name) => {
+    const { user: me } = await api.patch('/auth/me', { name });
+    setUser(me);
+    return me;
+  }, []);
+
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
   }, []);
 
-  const value = { user, setUser, loading, authError, login, register, demo, logout, updateUser, updateLimit };
+  const value = { user, setUser, loading, authError, login, register, logout, updateUser, updateLimit, updateProfile, requestPasswordReset, resetPassword };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

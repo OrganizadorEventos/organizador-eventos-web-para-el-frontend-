@@ -54,6 +54,13 @@ export default function EventoDetalle() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (event && location.state?.edit) {
+      setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', description: event.description || '' });
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [event, location.pathname, location.state, navigate]);
+
   function flash(msg) {
     setMessage(msg);
     window.setTimeout(() => setMessage(''), 5000);
@@ -86,12 +93,17 @@ export default function EventoDetalle() {
       setError('La gestión necesita un título de al menos 2 caracteres.');
       return;
     }
+    const hours = Number(newTask.estimatedHours);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setError('Las horas estimadas deben ser mayores que 0.');
+      return;
+    }
     setError('');
     try {
       await api.post(`/events/${id}/tasks`, {
         title: newTask.title.trim(),
         scheduledDate: newTask.scheduledDate || null,
-        estimatedHours: Number(newTask.estimatedHours) || 1,
+        estimatedHours: hours,
       });
       setNewTask({ title: '', scheduledDate: '', estimatedHours: 1 });
       setShowNewTask(false);
@@ -103,11 +115,16 @@ export default function EventoDetalle() {
   }
 
   async function saveEditedTask() {
+    const hours = Number(editTask.estimatedHours);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setError('Las horas estimadas deben ser mayores que 0.');
+      return;
+    }
     try {
       await api.patch(`/events/${id}/tasks/${editTask.id}`, {
         title: editTask.title,
         scheduledDate: editTask.scheduledDate || null,
-        estimatedHours: Number(editTask.estimatedHours) || 1,
+        estimatedHours: hours,
       });
       setEditTask(null);
       flash('Gestión actualizada.');
@@ -146,10 +163,11 @@ export default function EventoDetalle() {
       <div className="row-between">
         <div>
           <h1>{event.name}</h1>
+          <div className="activity-meta detail-meta"><span>{event.course || 'Sin curso'}</span><span>{event.type || 'Actividad'}</span><span>{event.date ? formatDate(event.date) : 'Sin fecha límite'}</span>{event.weight !== null && event.weight !== undefined && <span>{event.weight}% del curso</span>}</div>
           {event.description && <p style={{ color: 'var(--color-text-soft)', margin: 0 }}>{event.description}</p>}
         </div>
         <div className="row">
-          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, description: event.description })}>
+          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', description: event.description || '' })}>
             Editar
           </button>
           <button type="button" className="btn-danger-ghost btn-sm" onClick={() => setConfirmDelete(true)}>
@@ -194,7 +212,7 @@ export default function EventoDetalle() {
               </div>
               <div className="field" style={{ width: 110 }}>
                 <label htmlFor="nt-hours">Horas est.</label>
-                <input id="nt-hours" type="number" min="0.25" max="24" step="0.25" value={newTask.estimatedHours} onChange={(e) => setNewTask((t) => ({ ...t, estimatedHours: e.target.value }))} />
+                <input id="nt-hours" type="number" min="0" step="any" value={newTask.estimatedHours} onChange={(e) => setNewTask((t) => ({ ...t, estimatedHours: e.target.value }))} />
               </div>
               <button type="button" className="btn-success" style={{ alignSelf: 'flex-end' }} onClick={addTask}>
                 Guardar
@@ -288,11 +306,14 @@ export default function EventoDetalle() {
       )}
 
       {/* Editar evento */}
-      <Modal open={Boolean(editingEvent)} title="Editar evento" onClose={() => setEditingEvent(null)} labelledBy="edit-event-title">
+      <Modal open={Boolean(editingEvent)} title="Editar actividad" onClose={() => setEditingEvent(null)} labelledBy="edit-event-title">
         <div className="field">
           <label htmlFor="ee-name">Nombre del evento</label>
           <input id="ee-name" type="text" value={editingEvent?.name || ''} onChange={(e) => setEditingEvent((ev) => (ev ? { ...ev, name: e.target.value } : ev))} />
         </div>
+        <div className="field"><label htmlFor="ee-type">Tipo</label><input id="ee-type" value={editingEvent?.type || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, type: e.target.value } : ev)} /></div>
+        <div className="row"><div className="field" style={{ flex: 1 }}><label htmlFor="ee-course">Curso</label><input id="ee-course" value={editingEvent?.course || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, course: e.target.value } : ev)} /></div><div className="field" style={{ flex: 1 }}><label htmlFor="ee-weight">Peso (%)</label><input id="ee-weight" type="number" min="0" max="100" step="0.01" value={editingEvent?.weight ?? ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, weight: e.target.value } : ev)} /></div></div>
+        <div className="field"><label htmlFor="ee-date">Fecha límite</label><input id="ee-date" type="date" value={editingEvent?.date || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, date: e.target.value } : ev)} /></div>
         <div className="field">
           <label htmlFor="ee-desc">Descripción</label>
           <textarea id="ee-desc" rows={2} value={editingEvent?.description || ''} onChange={(e) => setEditingEvent((ev) => (ev ? { ...ev, description: e.target.value } : ev))} />
@@ -318,7 +339,7 @@ export default function EventoDetalle() {
               </div>
               <div className="field" style={{ width: 120 }}>
                 <label htmlFor="et-hours">Horas est.</label>
-                <input id="et-hours" type="number" min="0.25" max="24" step="0.25" value={editTask.estimatedHours} onChange={(e) => setEditTask((t) => ({ ...t, estimatedHours: e.target.value }))} />
+                <input id="et-hours" type="number" min="0" step="any" value={editTask.estimatedHours} onChange={(e) => setEditTask((t) => ({ ...t, estimatedHours: e.target.value }))} />
               </div>
             </div>
             <div className="row">
