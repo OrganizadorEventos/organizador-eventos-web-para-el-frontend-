@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { ApiError } from '../api';
@@ -16,7 +16,7 @@ export default function Perfil() {
     e.preventDefault(); setError(''); setMessage('');
     if (name.trim().length < 2) { setError('El nombre debe tener al menos 2 caracteres.'); return; }
     const hours = Number(limit);
-    if (!Number.isFinite(hours) || hours <= 0 || hours > 24) { setError('El límite diario debe estar entre 0.5 y 24 horas.'); return; }
+    if (!Number.isFinite(hours) || hours < 1 || hours > 24) { setError('El límite diario debe estar entre 0.5 y 24 horas.'); return; }
     setBusy(true);
     try {
       await updateProfile(name.trim());
@@ -39,7 +39,7 @@ export default function Perfil() {
           {message && <div className="form-success" role="status">{message}</div>}
           <div className="field"><label htmlFor="profile-name">Nombre de usuario</label><input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} minLength={2} maxLength={80} required /></div>
           <div className="field"><label htmlFor="profile-email">Correo electrónico</label><input id="profile-email" value={user?.email || ''} readOnly disabled /></div>
-          <div className="field"><label htmlFor="profile-limit">Límite diario de planificación (horas)</label><input id="profile-limit" type="number" min="0.5" max="24" step="0.5" value={limit} onChange={(e) => setLimit(e.target.value)} /></div>
+          <div className="field"><label htmlFor="profile-limit">Límite diario de planificación (horas)</label><input id="profile-limit" type="number" min="1" max="24" step="0.5" value={limit} onChange={(e) => setLimit(e.target.value)} /></div>
           <div className="row"><button type="submit" disabled={busy}>{busy ? 'Guardando…' : 'Guardar cambios'}</button><button type="button" className="btn-danger-ghost profile-logout" onClick={signOut}>Cerrar sesión</button></div>
         </form>
       </div>

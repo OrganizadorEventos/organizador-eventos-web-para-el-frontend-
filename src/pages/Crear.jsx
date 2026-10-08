@@ -14,7 +14,6 @@ export default function Crear() {
   const [name, setName] = useState('');
   const [type, setType] = useState('');
   const [otherType, setOtherType] = useState('');
-  const [course, setCourse] = useState('');
   const [weight, setWeight] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -39,7 +38,7 @@ export default function Crear() {
     setBusy(true);
     try {
       const { event } = await api.post('/events', {
-        name: name.trim(), type: cleanType, course: course.trim(), weight: weight === '' ? null : Number(weight), date, time,
+        name: name.trim(), type: cleanType, weight: weight === '' ? null : Number(weight), date, time,
         description: description.trim(),
         tasks: cleanTasks,
       });
@@ -58,7 +57,6 @@ export default function Crear() {
         <div className="field create-name-field"><label htmlFor="activity-title">Nombre del evento *</label><input id="activity-title" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Feria de emprendimiento" required /></div>
         <div className="field"><label htmlFor="activity-type">Tipo de evento *</label><select id="activity-type" value={type} onChange={(e) => setType(e.target.value)} required><option value="">Selecciona un tipo de evento</option>{EVENT_TYPES.map((eventType) => <option key={eventType}>{eventType}</option>)}</select></div>
         {type === 'Otro' && <div className="field"><label htmlFor="activity-other-type">Especifica el tipo de evento *</label><input id="activity-other-type" value={otherType} onChange={(e) => setOtherType(e.target.value)} maxLength={80} required /></div>}
-        <div className="field create-venue-field"><label htmlFor="activity-course">Lugar o espacio *</label><input id="activity-course" value={course} onChange={(e) => setCourse(e.target.value)} maxLength={120} placeholder="Ej. Salón principal" /></div>
         <div className="field create-date-field"><label htmlFor="activity-date">Fecha del evento *</label><input id="activity-date" type="date" lang="es-CO" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
         <div className="field create-time-field"><label htmlFor="activity-time">Hora del evento</label><TimePicker id="activity-time" value={time} onChange={setTime} /></div>
         <div className="field create-field-wide"><label htmlFor="activity-description">Descripción (opcional)</label><textarea id="activity-description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Añade detalles..." /></div>

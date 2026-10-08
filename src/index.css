@@ -586,7 +586,6 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
   .create-page .create-info-card { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 26px; padding: 27px; }
   .create-page .create-info-card > .create-name-field,
   .create-page .create-info-card > .field:nth-child(2) { grid-column: span 3; }
-  .create-page .create-info-card > .create-venue-field,
   .create-page .create-info-card > .create-date-field,
   .create-page .create-info-card > .create-time-field { grid-column: span 2; }
   .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
@@ -602,7 +601,6 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
 .create-page .create-info-card > .field { grid-column: span 2; margin: 0; }
 .create-page .create-info-card > .create-name-field,
 .create-page .create-info-card > .field:nth-child(2) { grid-column: span 3; }
-.create-page .create-info-card > .create-venue-field { grid-column: span 2; }
 .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
 .create-page .create-info-card textarea { min-height: 62px; }
 .create-page .subtasks-editor { margin: 0; padding: 16px 18px 18px; }
@@ -619,7 +617,6 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
   .create-page .create-info-card > .field,
   .create-page .create-info-card > .create-name-field,
   .create-page .create-info-card > .field:nth-child(2),
-  .create-page .create-info-card > .create-venue-field { grid-column: 1 / -1; }
   .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
   .create-page .subtasks-editor .row-between { align-items: center; }
   .create-page .form-submit-row button { width: 100%; }
@@ -715,12 +712,12 @@ body { background: #f4f8fc; font-family: var(--font); }
 .subtask-remove:hover { color: #b42318; background: transparent; text-decoration: underline; }
 .form-submit-row { display: flex; justify-content: flex-end; margin-top: 20px; }
 .form-submit-row button { min-width: 210px; }
-.events-tools { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(155px, .6fr) minmax(155px, .6fr); align-items: end; gap: 12px; margin-bottom: 16px; padding: 14px; }
+.events-tools { display: grid; grid-template-columns: minmax(230px, 1fr) minmax(155px, .6fr); align-items: end; gap: 12px; margin-bottom: 16px; padding: 14px; }
 .search-field { display: flex; align-items: center; gap: 8px; min-height: 38px; margin: 0; padding: 0 10px; border: 1px solid var(--color-border); border-radius: 8px; color: #8190a5; background: #fff; }
 .search-field input { min-height: 34px; padding: 5px 0; border: 0; outline: 0; }
 .events-tools .field { margin: 0; }
 .activity-table-card { padding: 0; overflow: hidden; }
-.activity-table { min-width: 750px; }
+.activity-table { min-width: 650px; }
 .activity-table th { color: #667085; background: #f8fafc; font-size: .7rem; }
 .activity-table td { color: #536075; font-size: .75rem; }
 .activity-table td:first-child { min-width: 210px; }
@@ -1157,7 +1154,6 @@ body { background: #f4f8fc; font-family: var(--font); }
   .create-page .create-info-card > .field,
   .create-page .create-info-card > .create-name-field,
   .create-page .create-info-card > .field:nth-child(2),
-  .create-page .create-info-card > .create-venue-field,
   .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
   .create-page .subtasks-editor { padding: 16px; }
   .create-page .subtasks-editor .row-between > button { min-width: 0; }
@@ -1242,9 +1238,8 @@ body { background: #f4f8fc; font-family: var(--font); }
   .create-page .create-title h1 { font-size: clamp(1.8rem, 2.2vw, 2.2rem); font-weight: 750; letter-spacing: -.035em; }
   .create-page .create-title .create-section-icon { width: 70px; height: 70px; flex-basis: 70px; border-radius: 18px; }
   .create-page .create-info-card { gap: 24px 26px; padding: 26px; }
-  .create-page .create-info-card > .create-venue-field { grid-column: span 2; }
   .create-page .create-info-card > .create-date-field,
-  .create-page .create-info-card > .create-time-field { grid-column: span 2; }
+  .create-page .create-info-card > .create-time-field { grid-column: span 3; }
   .create-page .create-info-card label { margin-bottom: 7px; color: #111d35; font-size: 1rem; font-weight: 700; }
   .create-page .create-info-card input, .create-page .create-info-card select, .create-page .create-info-card textarea, .create-page .create-info-card .time-picker-trigger { min-height: 54px; padding: 12px 16px; border: 1.5px solid #d9e3f0; border-radius: 13px; color: #15233d; }
   .create-page .create-info-card textarea { min-height: 98px; }
@@ -1271,7 +1266,7 @@ body { background: #f4f8fc; font-family: var(--font); }
 .create-page .create-title { justify-content: flex-start; }
 @media (max-width: 760px) {
   .create-page .create-info-card { gap: 14px; padding: 18px; }
-  .create-page .create-info-card > .field, .create-page .create-info-card > .create-name-field, .create-page .create-info-card > .field:nth-child(2), .create-page .create-info-card > .create-venue-field, .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
+  .create-page .create-info-card > .field, .create-page .create-info-card > .create-name-field, .create-page .create-info-card > .field:nth-child(2), .create-page .create-info-card > .create-field-wide { grid-column: 1 / -1; }
   .create-page .subtasks-editor { padding: 16px; }
   .create-page .subtasks-editor .row-between > button { min-width: 0; }
 }
