@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
@@ -102,7 +102,7 @@ export default function Hoy() {
     <section className="daily-summary" aria-label="Carga de hoy">
       <div><span className="summary-label">Carga de hoy</span><strong>{formatHours(workload)} <small>/ {formatHours(data.dailyLimit)} h</small></strong></div>
       <div className="summary-progress"><div className="progress-track"><div className={`progress-fill${pct >= 100 ? ' is-over-limit' : ''}`} style={{ width: `${pct}%` }} /></div><span>{pct}% del límite diario</span></div>
-      <label className="daily-limit-field" htmlFor="limit-input">Límite<input id="limit-input" type="number" min="0.5" max="24" step="0.5" value={data.dailyLimit} onChange={async (e) => { const value = Number(e.target.value); if (value > 0 && value <= 24) { try { const updated = await updateLimit(value); setData((current) => ({ ...current, dailyLimit: updated.dailyHoursLimit })); } catch (err) { setError(err.message); } } }} /></label>
+      <label className="daily-limit-field" htmlFor="limit-input">Límite<input id="limit-input" type="number" min="1" max="24" step="0.5" value={data.dailyLimit} onChange={async (e) => { const value = Number(e.target.value); if (value >= 1 && value <= 24) { try { const updated = await updateLimit(value); setData((current) => ({ ...current, dailyLimit: updated.dailyHoursLimit })); } catch (err) { setError(err.message); } } }} /></label>
     </section>
 
     {error && <div className="form-error" role="alert">{error}<button className="btn-ghost btn-sm" type="button" onClick={load}>Reintentar</button></div>}
@@ -112,7 +112,7 @@ export default function Hoy() {
         const state = eventStatus(event, data.date);
         return <li className="activity-card event-card" key={event.id}>
           <Link to={`/evento/${event.id}`} className={`event-type-icon event-icon-${state}`} aria-label={`Abrir ${event.name}`}>{state === 'done' ? '✓' : state === 'overdue' ? '!' : '◎'}</Link>
-          <div className="activity-main"><div className="activity-title-row"><Link to={`/evento/${event.id}`} className="activity-title">{event.name}</Link></div><div className="activity-meta"><span>▣ {event.date ? formatDate(event.date) : 'Fecha por definir'}</span><span>◇ {event.type || 'Evento'}</span><span>☷ {event.taskCount} subtareas</span></div></div>
+          <div className="activity-main"><div className="activity-title-row"><Link to={`/evento/${event.id}`} className="activity-title">{event.name}</Link></div><div className="activity-meta"><span>▪ {event.date ? formatDate(event.date) : 'Fecha por definir'}</span><span>◇ {event.type || 'Evento'}</span><span>☷ {event.taskCount} subtareas</span></div></div>
           <span className={`activity-state state-${state}`}>{statusLabel[state]}</span>
           <div className="event-menu-wrap">
             <button type="button" className="event-more" aria-label={`Acciones de ${event.name}`} aria-haspopup="menu" aria-expanded={openMenuId === event.id} onClick={() => setOpenMenuId((current) => current === event.id ? null : event.id)}>•••</button>

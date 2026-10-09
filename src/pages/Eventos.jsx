@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { LoadingState, EmptyState, ErrorState } from '../components/States';
@@ -16,7 +16,6 @@ export default function Eventos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
-  const [course, setCourse] = useState('all');
   const [status, setStatus] = useState('all');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -29,12 +28,11 @@ export default function Eventos() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const courses = useMemo(() => [...new Set((events || []).map((event) => event.course).filter(Boolean))].sort(), [events]);
   const filtered = useMemo(() => (events || []).filter((event) => {
     const state = statusOf(event);
-    const matchesQuery = `${event.name} ${event.course} ${event.type}`.toLowerCase().includes(query.trim().toLowerCase());
-    return matchesQuery && (course === 'all' || event.course === course) && (status === 'all' || state === status);
-  }), [events, query, course, status]);
+    const matchesQuery = `${event.name} ${event.type}`.toLowerCase().includes(query.trim().toLowerCase());
+    return matchesQuery && (status === 'all' || state === status);
+  }), [events, query, status]);
 
   async function removeEvent() {
     if (!deleteTarget) return;
@@ -53,8 +51,8 @@ export default function Eventos() {
       {error && <div className="form-error" role="alert">{error}</div>}
       {!events?.length ? <div className="card"><EmptyState emoji="▤" title="Aún no tienes eventos" text="Crea tu primer evento y organiza su preparación."><Link to="/crear" className="primary-link-button">Crear evento</Link></EmptyState></div> : (
         <>
-          <section className="events-tools card" aria-label="Filtros y búsqueda"><label className="search-field" htmlFor="activity-search"><span aria-hidden="true">⌕</span><input id="activity-search" type="search" placeholder="Buscar evento…" value={query} onChange={(e) => setQuery(e.target.value)} /></label><div className="field"><label htmlFor="events-course">Lugar o espacio</label><select id="events-course" value={course} onChange={(e) => setCourse(e.target.value)}><option value="all">Todos los lugares</option>{courses.map((item) => <option key={item}>{item}</option>)}</select></div><div className="field"><label htmlFor="events-status">Estado de preparación</label><select id="events-status" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Todos</option><option>Pendiente</option><option>Completada</option><option>Vencida</option></select></div></section>
-          {filtered.length === 0 ? <div className="card"><EmptyState emoji="⌕" title="No encontramos eventos" text="Prueba con otra búsqueda o cambia los filtros." /></div> : <div className="card activity-table-card"><div className="table-wrap"><table className="table activity-table"><thead><tr><th>Evento</th><th>Lugar</th><th>Tipo de evento</th><th>Fecha</th><th>Preparación</th><th>Acciones</th></tr></thead><tbody>{filtered.map((event) => { const state = statusOf(event); return <tr key={event.id}><td><Link className="table-title-link" to={`/evento/${event.id}`}>{event.name}</Link><small>{event.taskCount} subtareas · {event.progress}% preparado</small></td><td>{event.course || 'Por definir'}</td><td>{event.type || 'Evento'}</td><td>{event.date ? formatDate(event.date) : 'Por definir'}</td><td><span className={`activity-state state-${state === 'Vencida' ? 'overdue' : state === 'Completada' ? 'done' : 'pending'}`}>{state}</span></td><td><div className="table-actions"><Link to={`/evento/${event.id}`} state={{ edit: true }} aria-label={`Editar ${event.name}`} title="Editar">✎</Link><Link to={`/evento/${event.id}`} aria-label={`Ver ${event.name}`} title="Ver">↗</Link><button type="button" onClick={() => setDeleteTarget(event)} aria-label={`Eliminar ${event.name}`} title="Eliminar">⌫</button></div></td></tr>; })}</tbody></table></div><p className="table-footer">Mostrando {filtered.length} de {events.length} eventos</p></div>}
+          <section className="events-tools card" aria-label="Filtros y búsqueda"><label className="search-field" htmlFor="activity-search"><span aria-hidden="true">⌕</span><input id="activity-search" type="search" placeholder="Buscar evento…" value={query} onChange={(e) => setQuery(e.target.value)} /></label><div className="field"><label htmlFor="events-status">Estado de preparación</label><select id="events-status" value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Todos</option><option>Pendiente</option><option>Completada</option><option>Vencida</option></select></div></section>
+          {filtered.length === 0 ? <div className="card"><EmptyState emoji="⌕" title="No encontramos eventos" text="Prueba con otra búsqueda o cambia los filtros." /></div> : <div className="card activity-table-card"><div className="table-wrap"><table className="table activity-table"><thead><tr><th>Evento</th><th>Tipo de evento</th><th>Fecha</th><th>Preparación</th><th>Acciones</th></tr></thead><tbody>{filtered.map((event) => { const state = statusOf(event); return <tr key={event.id}><td><Link className="table-title-link" to={`/evento/${event.id}`}>{event.name}</Link><small>{event.taskCount} subtareas · {event.progress}% preparado</small></td><td>{event.type || 'Evento'}</td><td>{event.date ? formatDate(event.date) : 'Por definir'}</td><td><span className={`activity-state state-${state === 'Vencida' ? 'overdue' : state === 'Completada' ? 'done' : 'pending'}`}>{state}</span></td><td><div className="table-actions"><Link to={`/evento/${event.id}`} state={{ edit: true }} aria-label={`Editar ${event.name}`} title="Editar">✎</Link><Link to={`/evento/${event.id}`} aria-label={`Ver ${event.name}`} title="Ver">↗</Link><button type="button" onClick={() => setDeleteTarget(event)} aria-label={`Eliminar ${event.name}`} title="Eliminar">⌫</button></div></td></tr>; })}</tbody></table></div><p className="table-footer">Mostrando {filtered.length} de {events.length} eventos</p></div>}
         </>
       )}
       <Modal open={Boolean(deleteTarget)} title="Eliminar evento" onClose={() => setDeleteTarget(null)} labelledBy="delete-activity-title"><p>¿Quieres eliminar “{deleteTarget?.name}” y todas sus subtareas de preparación? Esta acción no se puede deshacer.</p><div className="row"><button type="button" className="btn-danger" disabled={busy} onClick={removeEvent}>{busy ? 'Eliminando…' : 'Eliminar evento'}</button><button type="button" className="btn-ghost" onClick={() => setDeleteTarget(null)}>Cancelar</button></div></Modal>

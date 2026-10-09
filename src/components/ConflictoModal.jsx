@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { api, ApiError } from '../api';
 import { formatDate, formatHours, localYMD } from '../lib/dates';
@@ -91,11 +91,6 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
     if (ok) onClose();
   }
 
-  async function acceptAnyway() {
-    const ok = await reschedule({ newDate: conflict.date, newHours: Number(newHours), acceptConflict: true });
-    if (ok) onClose();
-  }
-
   async function postpone() {
     setBusy(true);
     setError('');
@@ -112,7 +107,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
   const reductionImpossible = conflict && conflict.otherHours >= conflict.dailyLimit;
 
   return (
-    <Modal open={open} title="Reprogramar subtarea" onClose={onClose} labelledBy={HEADING}>
+    <Modal open={open} title={conflict ? '⚠️ Conflicto de sobrecarga' : 'Reprogramar subtarea'} onClose={onClose} labelledBy={HEADING}>
       <p>
         <strong>“{task?.title}”</strong> · {formatHours(task?.estimatedHours)} estimadas · {task?.scheduledDate ? formatDate(task.scheduledDate) : 'sin fecha'}
       </p>
@@ -176,9 +171,10 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
       ) : (
         <div className="conflict-panel" role="alertdialog" aria-live="polite">
           <div className="conflict-title">
-            <span aria-hidden="true">⚠️</span> Conflicto: sobrecarga diaria
+            ⚠️ Conflicto de sobrecarga
           </div>
-          <p>{conflict.message}</p>
+          <p>Quedarías con {formatHours(conflict.scheduledHours)} h planificadas (límite {formatHours(conflict.dailyLimit)} h).</p>
+          <p>Debes editar las horas o posponer la subtarea.</p>
           <p className="field-hint">
             Hay <strong>{formatHours(conflict.scheduledHours)}</strong> de subtareas pendientes el{' '}
             {formatDate(conflict.date)} y tu límite es <strong>{formatHours(conflict.dailyLimit)}</strong>.
@@ -211,7 +207,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
 
           {/* Alternativa 2: reducir horas */}
           <div className="conflict-alt">
-            <h4>Reducir horas estimadas</h4>
+            <h4>Editar horas</h4>
             {reductionImpossible ? (
               <p className="field-error">
                 Ya hay {formatHours(conflict.otherHours)} de otras subtareas ese día (igual al límite), así que
@@ -235,7 +231,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
                     onChange={(e) => setNewHours(e.target.value)}
                   />
                   <button type="button" className="btn-secondary" disabled={busy} onClick={applyReducedHours}>
-                    Aplicar horas reducidas
+                    Editar horas
                   </button>
                 </div>
               </>
@@ -250,18 +246,6 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
               Posponer
             </button>
           </div>
-
-          {/* Alternativa 4: aceptar */}
-          <div className="conflict-alt">
-            <h4>Aceptar la sobrecarga</h4>
-            <p className="field-hint">
-              Programar igualmente (quedarás {formatHours(conflict.excessHours)} por encima de tu límite ese día).
-            </p>
-            <button type="button" className="btn-ghost" disabled={busy} onClick={acceptAnyway}>
-              Aceptar igual
-            </button>
-          </div>
-
           <div className="row" style={{ marginTop: 14 }}>
             <button type="button" className="btn-secondary btn-sm" disabled={busy || !conflict} onClick={() => { setConflict(null); setError(''); }}>
               ← Volver a elegir fecha

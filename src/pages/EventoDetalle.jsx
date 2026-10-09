@@ -32,6 +32,9 @@ export default function EventoDetalle() {
 
   const [newTask, setNewTask] = useState({ title: '', scheduledDate: localYMD(), estimatedHours: 1 });
   const [showNewTask, setShowNewTask] = useState(false);
+  const [createConflict, setCreateConflict] = useState(null);
+  const [createResolutionSuccess, setCreateResolutionSuccess] = useState(null);
+  const [savingNewTask, setSavingNewTask] = useState(false);
 
   const [reprogram, setReprogram] = useState(null); // task
   const [executeTask, setExecuteTask] = useState(null); // {task, action}
@@ -58,7 +61,7 @@ export default function EventoDetalle() {
 
   useEffect(() => {
     if (event && location.state?.edit) {
-      setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' });
+      setEditingEvent({ name: event.name, type: event.type, weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' });
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [event, location.pathname, location.state, navigate]);
@@ -90,30 +93,76 @@ export default function EventoDetalle() {
     }
   }
 
-  async function addTask() {
+  async function addTask(resolution = null) {
+    if (savingNewTask) return;
     if (newTask.title.trim().length < 2) {
       setError('La subtarea necesita un título de al menos 2 caracteres.');
       return;
     }
-    const hours = Number(newTask.estimatedHours);
+    const hours = Number(resolution?.hours ?? newTask.estimatedHours);
     if (!Number.isFinite(hours) || hours <= 0) {
       setError('Las horas estimadas deben ser mayores que 0.');
       return;
     }
+    const scheduledDate = resolution?.date ?? newTask.scheduledDate;
+    if (!scheduledDate) {
+      setError('Selecciona una fecha para la subtarea.');
+      return;
+    }
     setError('');
+    setSavingNewTask(true);
     try {
+      const dailyLoad = await api.get(`/today?date=${encodeURIComponent(scheduledDate)}`);
+      const existingHours = Number(dailyLoad.todayHours);
+      const dailyLimit = Number(dailyLoad.dailyLimit);
+      if (!Number.isFinite(existingHours) || !Number.isFinite(dailyLimit)) {
+        throw new Error('No pudimos verificar la carga de esa fecha. Inténtalo de nuevo.');
+      }
+      const scheduledHours = existingHours + hours;
+      if (scheduledHours > dailyLimit) {
+        setCreateConflict({
+          type: 'OVERLOAD',
+          date: scheduledDate,
+          dailyLimit,
+          scheduledHours,
+          otherHours: existingHours,
+          movingHours: hours,
+          excessHours: scheduledHours - dailyLimit,
+          maxAllowedHours: Math.max(0, dailyLimit - existingHours),
+          hours,
+        });
+        return;
+      }
+
       await api.post(`/events/${id}/tasks`, {
         title: newTask.title.trim(),
-        scheduledDate: newTask.scheduledDate || null,
+        scheduledDate,
         estimatedHours: hours,
       });
+      setCreateConflict(null);
       setNewTask({ title: '', scheduledDate: localYMD(), estimatedHours: 1 });
       setShowNewTask(false);
-      flash('Subtarea agregada al plan.');
-      load();
+      if (resolution?.action) {
+        setCreateResolutionSuccess(resolution.action);
+      } else {
+        flash('Subtarea agregada al plan.');
+        load();
+      }
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.payload?.conflict) {
+        setCreateConflict({ ...err.payload.conflict, date: scheduledDate, hours });
+        setError('');
+        return;
+      }
       setError(err?.message || 'No pudimos agregar la subtarea.');
+    } finally {
+      setSavingNewTask(false);
     }
+  }
+
+  async function acknowledgeCreateResolution() {
+    await load({ silent: true });
+    setCreateResolutionSuccess(null);
   }
 
   async function saveEditedTask() {
@@ -140,9 +189,34 @@ export default function EventoDetalle() {
     setBusyDeleteTask(true);
     try {
       await api.del(`/events/${id}/tasks/${confirmDeleteTask.id}`);
+      setEvent((current) => {
+        if (!current) return current;
+        const tasks = current.tasks.filter(
+          (task) => Number(task.id) !== Number(confirmDeleteTask.id),
+        );
+        const doneCount = tasks.filter((task) => task.status === 'done').length;
+        const updated = {
+          ...current,
+          tasks,
+          progress: tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0,
+          doneHours: tasks.reduce(
+            (total, task) => total + (task.status === 'done' ? Number(task.estimatedHours || 0) : 0),
+            0,
+          ),
+          totalHours: tasks.reduce(
+            (total, task) => total + (task.status !== 'postponed' ? Number(task.estimatedHours || 0) : 0),
+            0,
+          ),
+        };
+        if ('taskCount' in current) updated.taskCount = tasks.length;
+        if ('doneCount' in current) updated.doneCount = doneCount;
+        if ('pendingCount' in current) updated.pendingCount = tasks.filter((task) => task.status === 'pending').length;
+        if ('postponedCount' in current) updated.postponedCount = tasks.filter((task) => task.status === 'postponed').length;
+        return updated;
+      });
       setConfirmDeleteTask(null);
+      setBusyDeleteTask(false);
       flash('Subtarea eliminada.');
-      load();
     } catch (err) {
       setError(err?.message || 'No pudimos eliminar.');
       setBusyDeleteTask(false);
@@ -165,11 +239,11 @@ export default function EventoDetalle() {
       <div className="row-between">
         <div>
           <h1>{event.name}</h1>
-          <div className="activity-meta detail-meta"><span>{event.course || 'Lugar por definir'}</span><span>{event.type || 'Evento'}</span><span>{event.date ? formatDate(event.date) : 'Fecha por definir'}{event.time ? ` · ${event.time}` : ''}</span></div>
+          <div className="activity-meta detail-meta"><span>{event.type || 'Evento'}</span><span>{event.date ? formatDate(event.date) : 'Fecha por definir'}{event.time ? ` · ${event.time}` : ''}</span></div>
           {event.description && <p style={{ color: 'var(--color-text-soft)', margin: 0 }}>{event.description}</p>}
         </div>
         <div className="row">
-          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, type: event.type, course: event.course || '', weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' })}>
+          <button type="button" className="btn-secondary btn-sm" onClick={() => setEditingEvent({ name: event.name, type: event.type, weight: event.weight ?? '', date: event.date || '', time: event.time || '', description: event.description || '' })}>
             Editar
           </button>
           <button type="button" className="btn-danger-ghost btn-sm" onClick={() => setConfirmDelete(true)}>
@@ -216,8 +290,8 @@ export default function EventoDetalle() {
                 <label htmlFor="nt-hours">Horas est.</label>
                 <input id="nt-hours" type="number" min="0" step="any" value={newTask.estimatedHours} onChange={(e) => setNewTask((t) => ({ ...t, estimatedHours: e.target.value }))} />
               </div>
-              <button type="button" className="btn-success" style={{ alignSelf: 'flex-end' }} onClick={addTask}>
-                Guardar
+              <button type="button" className="btn-success" style={{ alignSelf: 'flex-end' }} disabled={savingNewTask} onClick={() => addTask()}>
+                {savingNewTask ? 'Verificando…' : 'Guardar'}
               </button>
             </div>
           </div>
@@ -314,7 +388,6 @@ export default function EventoDetalle() {
           <input id="ee-name" type="text" value={editingEvent?.name || ''} onChange={(e) => setEditingEvent((ev) => (ev ? { ...ev, name: e.target.value } : ev))} />
         </div>
         <div className="field"><label htmlFor="ee-type">Tipo de evento</label><select id="ee-type" value={editingEvent?.type || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, type: e.target.value } : ev)}>{editingEvent?.type && !EVENT_TYPES.includes(editingEvent.type) && <option>{editingEvent.type}</option>}{EVENT_TYPES.map((eventType) => <option key={eventType}>{eventType}</option>)}</select></div>
-        <div className="field"><label htmlFor="ee-course">Lugar o espacio</label><input id="ee-course" value={editingEvent?.course || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, course: e.target.value } : ev)} /></div>
         <div className="activity-fields-row"><div className="field"><label htmlFor="ee-date">Fecha del evento</label><input id="ee-date" type="date" value={editingEvent?.date || ''} onChange={(e) => setEditingEvent((ev) => ev ? { ...ev, date: e.target.value } : ev)} /></div><div className="field"><label htmlFor="ee-time">Hora del evento</label><TimePicker id="ee-time" value={editingEvent?.time || ''} onChange={(time) => setEditingEvent((ev) => ev ? { ...ev, time } : ev)} /></div></div>
         <div className="field">
           <label htmlFor="ee-desc">Descripción</label>
@@ -372,6 +445,50 @@ export default function EventoDetalle() {
           </button>
           <button type="button" className="btn-ghost" onClick={() => setConfirmDeleteTask(null)}>Cancelar</button>
         </div>
+      </Modal>
+
+      <Modal open={Boolean(createConflict)} title="⚠️ Conflicto de sobrecarga" onClose={() => setCreateConflict(null)} labelledBy="create-overload-title">
+        {createConflict && <>
+          <p>Quedarías con {formatHours(createConflict.scheduledHours).replace('h', ' h')} planificadas (límite {formatHours(createConflict.dailyLimit).replace('h', ' h')}).</p>
+          <p>Elige otra fecha o reduce la duración para mantener un ritmo viable.</p>
+          <p><strong>¿Cómo deseas resolverlo?</strong></p>
+          <div className="conflict-alt">
+            <h4>Mover a otro día</h4>
+            <div className="activity-fields-row">
+              <label htmlFor="create-conflict-date">Fecha alternativa</label>
+              <input id="create-conflict-date" type="date" value={createConflict.date || ''} onChange={(e) => setCreateConflict((current) => ({ ...current, date: e.target.value }))} />
+              <button type="button" className="btn-secondary" disabled={savingNewTask} onClick={() => addTask({ date: createConflict.date, hours: createConflict.hours, action: 'move' })}>{savingNewTask ? 'Verificando…' : 'Mover a otro día'}</button>
+            </div>
+          </div>
+          <div className="conflict-alt">
+            <h4>Reducir horas</h4>
+            <div className="activity-fields-row">
+              <label htmlFor="create-conflict-hours">Duración</label>
+              <input id="create-conflict-hours" type="number" min="0.01" step="any" value={createConflict.hours} onChange={(e) => setCreateConflict((current) => ({ ...current, hours: e.target.value }))} />
+              <button type="button" className="btn-secondary" disabled={savingNewTask} onClick={() => addTask({ date: createConflict.date, hours: createConflict.hours, action: 'reduce' })}>{savingNewTask ? 'Verificando…' : 'Reducir horas'}</button>
+            </div>
+          </div>
+          <p>Si el total de la fecha elegida supera el límite, la subtarea no se guardará.</p>
+          <button type="button" className="btn-ghost" onClick={() => setCreateConflict(null)}>Cancelar</button>
+        </>}
+      </Modal>
+
+      <Modal
+        open={Boolean(createResolutionSuccess)}
+        title={createResolutionSuccess === 'reduce' ? '✓ Duración actualizada' : '✓ Fecha actualizada'}
+        onClose={acknowledgeCreateResolution}
+        labelledBy="create-resolution-success-title"
+      >
+        <p>{createResolutionSuccess === 'reduce'
+          ? 'Las horas de la subtarea se redujeron correctamente y la planificación del día ahora está dentro del límite de 6 horas.'
+          : 'La subtarea fue reprogramada correctamente para la nueva fecha y la planificación del día quedó dentro del límite de 6 horas.'}</p>
+        <button
+          type="button"
+          className="btn-success"
+          onClick={acknowledgeCreateResolution}
+        >
+          Aceptar
+        </button>
       </Modal>
 
       {/* Reprogramar + conflicto */}
