@@ -37,21 +37,34 @@ async function request(path, { method = 'GET', body, token } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError('No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.', 0, {});
+    console.error(`[API] ${method} ${path} no pudo conectarse al servidor.`);
+    throw new ApiError('No se pudo cargar la información. Inténtalo de nuevo.', 0, {});
   }
 
   let data = null;
-  try {
-    data = await res.json();
-  } catch {
-    data = null;
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.toLowerCase().includes('application/json')) {
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
   }
 
   if (res.status === 401 && data?.error === 'auth_required' || res.status === 401 && data?.error === 'invalid_token') {
     setToken(null);
   }
   if (!res.ok) {
-    throw new ApiError(data?.message || 'Ocurrió un error inesperado.', res.status, data || {});
+    const safeMessage = res.status >= 500
+      ? 'No se pudo cargar la información. Inténtalo de nuevo.'
+      : typeof data?.message === 'string' && !/<\s*(!doctype|html|head|body|script)\b/i.test(data.message)
+        ? data.message
+        : 'Ocurrió un error inesperado.';
+    console.error(`[API] ${method} ${path} respondió ${res.status}.`, {
+      contentType,
+      errorCode: typeof data?.error === 'string' ? data.error : undefined,
+    });
+    throw new ApiError(safeMessage, res.status, data || {});
   }
   return data;
 }

@@ -5,6 +5,26 @@ import { LoadingState, EmptyState, ErrorState } from '../components/States';
 import ProgressBar from '../components/ProgressBar';
 import { formatDate, formatHours, formatDateTime, localYMD } from '../lib/dates';
 
+function taskState(task, today) {
+  if (task.status === 'done') return { key: 'done', label: 'Hecha' };
+  if (task.status === 'postponed') return { key: 'postponed', label: 'En pausa' };
+  if (task.status === 'pending' && task.scheduledDate && task.scheduledDate < today) {
+    return { key: 'overdue', label: 'Vencida' };
+  }
+  return { key: 'pending', label: 'Pendiente' };
+}
+
+function eventCounts(event) {
+  const overdue = Number(event.overdueCount || 0);
+  const pending = Math.max(0, Number(event.pendingCount || 0) - overdue);
+  return {
+    done: Number(event.doneCount || 0),
+    pending,
+    overdue,
+    postponed: Number(event.postponedCount || 0),
+  };
+}
+
 export default function Progreso() {
   const [events, setEvents] = useState(null);
   const [selectedId, setSelectedId] = useState('');
@@ -19,7 +39,10 @@ export default function Progreso() {
     try {
       const { events: list } = await api.get(`/events?date=${localYMD()}`);
       setEvents(list);
-      if (list.length && !list.some((e) => e.id === Number(selectedId))) {
+      if (!list.length) {
+        setSelectedId('');
+        setDetail(null);
+      } else if (!list.some((e) => e.id === Number(selectedId))) {
         setSelectedId(String(list[0].id));
       }
     } catch (err) {
@@ -71,59 +94,68 @@ export default function Progreso() {
 
   if (events.length === 0) {
     return (
-      <div>
+      <section className="progress-page">
       <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso de eventos</h1><p className="page-subtitle">Consulta el avance de las subtareas de tus eventos.</p></div></header>
         <div className="card">
           <EmptyState
             emoji="📊"
             title="Sin eventos para medir"
-            text="Creá un evento para ver aquí el progreso de sus subtareas."
+            text="Crea un evento para consultar el progreso de sus subtareas."
           >
             <Link to="/crear" className="btn-secondary" style={{ textDecoration: 'none' }}>Crear evento</Link>
           </EmptyState>
         </div>
-      </div>
+      </section>
     );
   }
 
   const totalTasks = events.reduce((sum, event) => sum + Number(event.taskCount || 0), 0);
-  const completedTasks = events.reduce((sum, event) => sum + Number(event.doneCount || 0), 0);
-  const pendingTasks = events.reduce((sum, event) => sum + Number(event.pendingCount || 0), 0);
-  const overdueTasks = events.reduce((sum, event) => sum + Number(event.overdueCount || 0), 0);
-  const plannedHours = events.reduce((sum, event) => sum + Number(event.totalHours || 0), 0);
-  const doneHours = events.reduce((sum, event) => sum + Number(event.doneHours || 0), 0);
+  const completedTasks = events.reduce((sum, event) => sum + eventCounts(event).done, 0);
+  const pendingTasks = events.reduce((sum, event) => sum + eventCounts(event).pending, 0);
+  const overdueTasks = events.reduce((sum, event) => sum + eventCounts(event).overdue, 0);
+  const postponedTasks = events.reduce((sum, event) => sum + eventCounts(event).postponed, 0);
   const overallProgress = totalTasks ? Math.round(completedTasks / totalTasks * 100) : 0;
   const upcomingEvents = [...events].filter((event) => event.date && event.date >= localYMD()).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
-  const done = detail ? detail.tasks.filter((t) => t.status === 'done') : [];
-  const pending = detail ? detail.tasks.filter((t) => t.status === 'pending') : [];
-  const postponed = detail ? detail.tasks.filter((t) => t.status === 'postponed') : [];
-
+  const today = localYMD();
+  const detailCounts = (detail?.tasks || []).reduce((counts, task) => {
+    const state = taskState(task, today).key;
+    counts[state] = (counts[state] || 0) + 1;
+    return counts;
+  }, { done: 0, pending: 0, overdue: 0, postponed: 0 });
+  const detailTasks = (detail?.tasks || []).map((task) => ({ ...task, displayState: taskState(task, today) }));
   return (
-    <div>
-      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso de eventos</h1><p className="page-subtitle">Visualiza el avance y el tiempo dedicado a la organización.</p></div></header>
-      <p className="page-subtitle">Resumen de subtareas completadas, pendientes y vencidas.</p>
+    <section className="progress-page">
+      <header className="page-title-row"><div><p className="eyebrow">MIVO · RESUMEN</p><h1>Progreso de eventos</h1><p className="page-subtitle">Visualiza el avance y el tiempo dedicado a la organización.</p></div><div className="progress-overall-chip"><span>Progreso general</span><strong>{overallProgress}%</strong></div></header>
 
-      <section className="progress-overview">
-        <div className="card progress-total-card"><div className="progress-ring" style={{ '--progress-value': `${overallProgress}%` }}><span>{overallProgress}%</span></div><div><strong>Progreso general</strong><p>{completedTasks} de {totalTasks} subtareas completadas</p><p>{formatHours(doneHours)} de {formatHours(plannedHours)} horas completadas</p></div></div>
-        <div className="card progress-stat"><span>Subtareas planificadas</span><strong>{totalTasks}</strong></div>
-        <div className="card progress-stat"><span>Completadas</span><strong className="text-success">{completedTasks}</strong></div>
-        <div className="card progress-stat"><span>Pendientes</span><strong>{pendingTasks}</strong></div>
-        <div className="card progress-stat"><span>Vencidas</span><strong className="text-danger">{overdueTasks}</strong></div>
+      <section className="progress-overview" aria-label="Resumen de subtareas por estado">
+        <article className="card progress-state-card progress-state-done"><span className="progress-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg></span><strong>{completedTasks}</strong><span>Completadas</span></article>
+        <article className="card progress-state-card progress-state-pending"><span className="progress-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg></span><strong>{pendingTasks}</strong><span>Pendientes</span></article>
+        <article className="card progress-state-card progress-state-overdue"><span className="progress-state-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4m0 3h.01"/></svg></span><strong>{overdueTasks}</strong><span>Vencidas</span></article>
       </section>
+      {postponedTasks > 0 && <p className="progress-paused-note">{postponedTasks} subtareas en pausa; se muestran aparte y no se cuentan como pendientes ni vencidas.</p>}
       <section className="card event-progress-list">
         <h2>Progreso por evento</h2>
         <div className="event-progress-items">
-          {events.map((event) => (
+          {events.map((event) => {
+            const counts = eventCounts(event);
+            return (
             <article className="event-progress-item" key={event.id}>
               <div className="row-between">
                 <Link to={`/evento/${event.id}`}>{event.name}</Link>
                 <strong>{event.progress}%</strong>
               </div>
-              <ProgressBar value={event.progress} label={`${event.doneCount || 0} de ${event.taskCount || 0} subtareas · ${formatHours(event.doneHours)} de ${formatHours(event.totalHours)}`} />
+              <ProgressBar value={event.progress} label={`${counts.done} de ${event.taskCount || 0} subtareas · ${formatHours(event.doneHours)} de ${formatHours(event.totalHours)}`} />
+              <div className="event-progress-counts" aria-label={`Estados de subtareas de ${event.name}`}>
+                <span className="task-state-text task-state-done">{counts.done} hechas</span>
+                <span className="task-state-text task-state-pending">{counts.pending} pendientes</span>
+                <span className="task-state-text task-state-overdue">{counts.overdue} vencidas</span>
+                {counts.postponed > 0 && <span className="task-state-text task-state-postponed">{counts.postponed} en pausa</span>}
+              </div>
               {Number(event.taskCount) > 0 && Number(event.doneCount) === Number(event.taskCount) && <span className="event-progress-complete">✓ Completado</span>}
               <button type="button" className="btn-secondary btn-sm" onClick={() => { setSelectedId(String(event.id)); document.getElementById('progress-event-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>Ver subtareas</button>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
       {upcomingEvents.length > 0 && <section className="card upcoming-deadlines"><div className="row-between"><h2>Próximos vencimientos</h2><Link to="/eventos">Ver todas</Link></div><ul>{upcomingEvents.map((event) => <li key={event.id}><span className="deadline-dot" /><Link to={`/evento/${event.id}`}>{event.name}</Link><span>{formatDate(event.date)}</span></li>)}</ul></section>}
@@ -153,79 +185,45 @@ export default function Progreso() {
             <div style={{ marginTop: 14 }}>
               <ProgressBar value={detail.progress} label="Progreso del evento" />
             </div>
-            <div className="row" style={{ marginTop: 14, gap: 16 }}>
-              <div>
-                <strong>{formatHours(detail.doneHours)}</strong>
-                <span className="field-hint"> horas de subtarea completadas</span>
-              </div>
-              <div>
-                <strong>{formatHours(detail.totalHours)}</strong>
-                <span className="field-hint"> horas planificadas</span>
-              </div>
-              <div>
-                <strong>{detail.tasks.length}</strong>
-                <span className="field-hint"> subtareas totales</span>
-              </div>
-              <div>
-                <strong>{pending.length}</strong>
-                <span className="field-hint"> pendientes</span>
-              </div>
-              <div>
-                <strong>{postponed.length}</strong>
-                <span className="field-hint"> en pausa</span>
-              </div>
+            <div className="progress-detail-counts">
+              <span className="task-state-text task-state-done">{detailCounts.done} hechas</span>
+              <span className="task-state-text task-state-pending">{detailCounts.pending} pendientes</span>
+              <span className="task-state-text task-state-overdue">{detailCounts.overdue} vencidas</span>
+              <span className="task-state-text task-state-postponed">{detailCounts.postponed} en pausa</span>
+              <span>{formatHours(detail.doneHours)} de {formatHours(detail.totalHours)} horas completadas</span>
             </div>
           </div>
+
+          {detailTasks.length > 0 && (
+            <section className="card progress-task-section" aria-label={`Subtareas de ${detail.name}`}>
+              <div className="progress-task-section-heading">
+                <div><p className="eyebrow">DETALLE</p><h2>Subtareas planificadas</h2></div>
+                <span>{detailTasks.length} en total</span>
+              </div>
+              <div className="progress-task-list">
+                {detailTasks.map((task) => (
+                  <article className="progress-task-row" key={task.id}>
+                    <label className="progress-task-check" aria-label={task.status === 'done' ? `Marcar ${task.title} como pendiente` : `Marcar ${task.title} como hecha`}>
+                      <input type="checkbox" checked={task.status === 'done'} disabled={updatingTaskId === task.id} onChange={() => setTaskCompleted(task, task.status !== 'done')} />
+                    </label>
+                    <div className="progress-task-main">
+                      <strong>{task.title}</strong>
+                      <div className="progress-task-meta">
+                        <span>{task.scheduledDate ? formatDate(task.scheduledDate) : 'Sin fecha planificada'}</span>
+                        {task.estimatedHours !== null && task.estimatedHours !== undefined && <span>{formatHours(task.estimatedHours)}</span>}
+                        {task.note && <span>{task.note}</span>}
+                      </div>
+                    </div>
+                    <span className={`progress-task-status task-state-${task.displayState.key}`}><i aria-hidden="true" />{task.displayState.label}</span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           {detail.tasks.length === 0 ? (
             <div className="card"><p className="field-hint" style={{ margin: 0 }}>Este evento no tiene subtareas agregadas.</p></div>
-          ) : <>
-          <div className="row" style={{ alignItems: 'flex-start' }}>
-            <div className="card" style={{ flex: 1, minWidth: 260 }}>
-              <h2>Completadas ✅</h2>
-              {done.length === 0 ? (
-                <p className="field-hint">Todavía no registraste subtareas completadas.</p>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {done.map((t) => (
-                    <li key={t.id} style={{ marginBottom: 6 }}>
-                      <label className="progress-task-toggle"><input type="checkbox" checked disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, false)} /><span><strong>{t.title}</strong>{t.note && <span className="field-hint"> — {t.note}</span>}<span className="field-hint"> ({formatHours(t.estimatedHours)}h)</span></span></label>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="card" style={{ flex: 1, minWidth: 260 }}>
-              <h2>Pendientes ⏳</h2>
-              {pending.length === 0 ? (
-                <p className="field-hint">Sin pendientes. ¡Todo planificado!</p>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: 20 }}>
-                  {pending.map((t) => (
-                    <li key={t.id} style={{ marginBottom: 6 }}>
-                      <label className="progress-task-toggle"><input type="checkbox" disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, true)} /><span><strong>{t.title}</strong><span className="field-hint"> · {t.scheduledDate ? formatDate(t.scheduledDate) : 'sin fecha'} · {formatHours(t.estimatedHours)}h</span></span></label>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-
-          {postponed.length > 0 && (
-            <div className="card">
-              <h2>En pausa ⏸️</h2>
-              <p className="field-hint">Pospuestas por imprevistos. No cuentan en el progreso hasta retomarlas.</p>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
-                {postponed.map((t) => (
-                  <li key={t.id} style={{ marginBottom: 6 }}>
-                    <label className="progress-task-toggle"><input type="checkbox" disabled={updatingTaskId === t.id} onChange={() => setTaskCompleted(t, true)} /><span><strong>{t.title}</strong>{t.note && <span className="field-hint"> — {t.note}</span>}</span></label>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          </>}
+          ) : null}
 
           {detail.activities?.length > 0 && (
             <div className="card">
@@ -256,7 +254,7 @@ export default function Progreso() {
           )}
         </>
       )}
-    </div>
+    </section>
   );
 }
 
