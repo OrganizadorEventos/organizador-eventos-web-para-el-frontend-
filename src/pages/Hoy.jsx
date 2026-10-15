@@ -223,7 +223,21 @@ export default function Hoy() {
           const state = eventStatus(event, todayDate);
         return <li className="activity-card event-card" key={event.id}>
           <Link to={`/evento/${event.id}`} className={`event-type-icon event-icon-${state}`} aria-label={`Abrir ${event.name}. Tipo: ${event.type || 'Evento'}. Estado: ${statusLabel[state]}`} title={event.type || 'Evento'}><EventTypeIcon type={event.type} /></Link>
-          <div className="activity-main"><div className="activity-title-row"><Link to={`/evento/${event.id}`} className="activity-title">{event.name}</Link></div><div className="activity-meta"><span>▪ {event.date ? formatDate(event.date) : 'Fecha por definir'}</span><span>◇ {event.type || 'Evento'}</span><span>☷ {event.taskCount} subtareas</span></div></div>
+          <div className="activity-main"><div className="activity-title-row"><Link to={`/evento/${event.id}`} className="activity-title">{event.name}</Link></div><div className="activity-meta"><span>▪ {event.date ? formatDate(event.date) : 'Fecha por definir'}</span><span>◇ {event.type || 'Evento'}</span></div>
+            {Number(event.taskCount) > 0 ? (() => {
+              const total = Number(event.taskCount) || 0;
+              const completed = Math.min(total, Number(event.doneCount) || 0);
+              const pending = Number(event.pendingCount) || 0;
+              const remaining = total - completed;
+              const percentage = (completed / total) * 100;
+              const remainingLabel = remaining === 0 ? 'Todas completadas' : `Falta${remaining === 1 ? '' : 'n'} ${remaining}`;
+              return <div className="event-task-progress">
+                <div className="event-task-counts"><span>{total} {total === 1 ? 'subtarea' : 'subtareas'}</span><span>{pending} {pending === 1 ? 'pendiente' : 'pendientes'}</span><strong>{remainingLabel}</strong></div>
+                <div className="event-task-progress-track" role="progressbar" aria-label={`Subtareas completadas: ${completed} de ${total}`} aria-valuenow={Math.round(percentage)} aria-valuemin="0" aria-valuemax="100"><div className="event-task-progress-fill" style={{ width: `${percentage}%` }} /></div>
+                <span className="event-task-progress-label">Subtareas completadas: {completed} de {total}</span>
+              </div>;
+            })() : <div className="event-task-progress event-task-progress-empty"><span>Sin subtareas</span></div>}
+          </div>
           <span className={`activity-state state-${state}`}>{statusLabel[state]}</span>
           <div className="event-menu-wrap">
             <button type="button" className="event-more" aria-label={`Más opciones para ${event.name}`} title="Más opciones" aria-haspopup="menu" aria-expanded={openMenuId === event.id} onClick={() => setOpenMenuId((current) => current === event.id ? null : event.id)}><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg></button>

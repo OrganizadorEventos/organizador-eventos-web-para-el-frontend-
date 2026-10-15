@@ -1156,6 +1156,13 @@ body { background: #f4f8fc; font-family: var(--font); }
 .today-page .activity-main { flex: 1; }
 .today-page .activity-title { font-size: 1rem; }
 .today-page .activity-meta { gap: 8px 18px; margin-top: 8px; color: #647895; font-size: .85rem; }
+.today-page .event-task-progress { display: grid; gap: 7px; max-width: 520px; margin-top: 12px; }
+.today-page .event-task-counts { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 14px; color: #647895; font-size: .8rem; }
+.today-page .event-task-counts strong { margin-left: auto; color: #1677f9; font-weight: 700; }
+.today-page .event-task-progress-track { height: 8px; overflow: hidden; border-radius: 999px; background: #e9f0f8; }
+.today-page .event-task-progress-fill { height: 100%; border-radius: inherit; background: #287cf5; transition: width .2s ease; }
+.today-page .event-task-progress-label { color: #52627a; font-size: .8rem; }
+.today-page .event-task-progress-empty { color: #647895; font-size: .82rem; }
 .today-page .activity-state { min-width: 112px; justify-content: center; padding: 10px 15px; font-size: .83rem; }
 .today-page .state-overdue { color: #ed2939; background: #ffe3e6; }
 .today-page .state-pending { color: #e89b00; background: #fff2d2; }
@@ -1196,10 +1203,13 @@ body { background: #f4f8fc; font-family: var(--font); }
   .today-page .event-card { grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 8px 11px; padding: 13px; }
   .today-page .event-type-icon { grid-column: 1; grid-row: 1 / span 2; width: 40px; height: 40px; }
   .today-page .event-type-icon svg { width: 21px; height: 21px; }
-  .today-page .activity-main { grid-column: 2; grid-row: 1; }
-  .today-page .activity-state { grid-column: 2; grid-row: 2; justify-self: start; }
-  .today-page .event-menu-wrap { grid-column: 3; grid-row: 1 / span 2; align-self: start; }
+  .today-page .activity-main { grid-column: 2; grid-row: 1 / span 2; }
+  .today-page .activity-state { grid-column: 2; grid-row: 3; justify-self: start; }
+  .today-page .event-menu-wrap { grid-column: 3; grid-row: 1; align-self: start; }
   .today-page .activity-state { min-width: auto; padding: 7px 10px; }
+  .today-page .event-task-counts { gap: 5px 10px; }
+  .today-page .event-task-counts strong { margin-left: 0; }
+  .today-page .event-task-progress { max-width: none; }
   .event-type-icon { width: 44px; height: 44px; flex-basis: 44px; }
 }
 .create-page .form-submit-row button { min-width: 230px; min-height: 54px; border-radius: 13px; background: #1677f9; font-weight: 700; }
