@@ -37,8 +37,10 @@ export default function EventoDetalle() {
   const [savingNewTask, setSavingNewTask] = useState(false);
 
   const [reprogram, setReprogram] = useState(null); // task
+  const [pendingEditAfterConflict, setPendingEditAfterConflict] = useState(null);
   const [executeTask, setExecuteTask] = useState(null); // {task, action}
   const [editTask, setEditTask] = useState(null);
+  const closeEditTask = useCallback(() => setEditTask(null), []);
   const [confirmDeleteTask, setConfirmDeleteTask] = useState(null);
   const [busyDeleteTask, setBusyDeleteTask] = useState(false);
 
@@ -112,28 +114,6 @@ export default function EventoDetalle() {
     setError('');
     setSavingNewTask(true);
     try {
-      const dailyLoad = await api.get(`/today?date=${encodeURIComponent(scheduledDate)}`);
-      const existingHours = Number(dailyLoad.todayHours);
-      const dailyLimit = Number(dailyLoad.dailyLimit);
-      if (!Number.isFinite(existingHours) || !Number.isFinite(dailyLimit)) {
-        throw new Error('No pudimos verificar la carga de esa fecha. Inténtalo de nuevo.');
-      }
-      const scheduledHours = existingHours + hours;
-      if (scheduledHours > dailyLimit) {
-        setCreateConflict({
-          type: 'OVERLOAD',
-          date: scheduledDate,
-          dailyLimit,
-          scheduledHours,
-          otherHours: existingHours,
-          movingHours: hours,
-          excessHours: scheduledHours - dailyLimit,
-          maxAllowedHours: Math.max(0, dailyLimit - existingHours),
-          hours,
-        });
-        return;
-      }
-
       await api.post(`/events/${id}/tasks`, {
         title: newTask.title.trim(),
         scheduledDate,
@@ -181,7 +161,34 @@ export default function EventoDetalle() {
       flash('Subtarea actualizada.');
       load();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.payload?.conflict) {
+        setPendingEditAfterConflict({ id: editTask.id, title: editTask.title });
+        setReprogram({ ...editTask, initialConflict: err.payload.conflict });
+        setEditTask(null);
+        return;
+      }
       setError(err?.message || 'No pudimos guardar.');
+    }
+  }
+
+  const closeReprogram = useCallback(() => {
+    setReprogram(null);
+    setPendingEditAfterConflict(null);
+  }, []);
+
+  async function handleReprogramResolved(message) {
+    const pendingEdit = pendingEditAfterConflict;
+    setPendingEditAfterConflict(null);
+    if (!pendingEdit) {
+      flash(message);
+      return;
+    }
+    try {
+      await api.patch(`/events/${id}/tasks/${pendingEdit.id}`, { title: pendingEdit.title });
+      await load({ silent: true });
+      flash('Subtarea actualizada.');
+    } catch (err) {
+      setError(err?.message || 'La fecha quedó actualizada, pero no pudimos guardar el título.');
     }
   }
 
@@ -400,7 +407,7 @@ export default function EventoDetalle() {
       </Modal>
 
       {/* Editar subtarea */}
-      <Modal open={Boolean(editTask)} title="Editar subtarea" onClose={() => setEditTask(null)} labelledBy="edit-task-title">
+      <Modal open={Boolean(editTask)} title="Editar subtarea" onClose={closeEditTask} labelledBy="edit-task-title">
         {editTask && (
           <>
             <div className="field">
@@ -497,8 +504,9 @@ export default function EventoDetalle() {
         open={Boolean(reprogram)}
         task={reprogram}
         eventId={id}
-        onClose={() => setReprogram(null)}
-        onResolved={flash}
+        initialConflict={reprogram?.initialConflict}
+        onClose={closeReprogram}
+        onResolved={handleReprogramResolved}
         onVerifyRescheduled={async (taskId) => {
           const refreshedEvent = await load({ silent: true });
           return refreshedEvent?.tasks?.find((item) => Number(item.id) === Number(taskId)) || null;

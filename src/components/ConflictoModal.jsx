@@ -5,7 +5,7 @@ import { formatDate, formatHours, localYMD } from '../lib/dates';
 
 const HEADING = 'reprogramar-title';
 
-export default function ConflictoModal({ open, task, eventId, onClose, onResolved, onVerifyRescheduled }) {
+export default function ConflictoModal({ open, task, eventId, onClose, onResolved, onVerifyRescheduled, initialConflict = null }) {
   const [newDate, setNewDate] = useState('');
   const [newHours, setNewHours] = useState(1);
   const [conflict, setConflict] = useState(null);
@@ -16,11 +16,11 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
     if (open && task) {
       setNewDate(task.scheduledDate || localYMD());
       setNewHours(task.estimatedHours || 1);
-      setConflict(null);
+      setConflict(initialConflict);
       setError('');
       setBusy(false);
     }
-  }, [open, task]);
+  }, [open, task, initialConflict]);
 
   // Al abrir, precargar el estado del formulario
   // (reset depende de la apertura; se reinicia por key en el padre usando task.id)
@@ -55,7 +55,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
         setError(`Solicitaste ${requestedDate}, pero la subtarea quedó guardada con fecha ${actualDate}. No se confirmó la reprogramación.`);
         return false;
       }
-      onResolved('Subtarea reprogramada correctamente.');
+      await onResolved('Subtarea reprogramada correctamente.');
       return true;
     } catch (err) {
       if (err instanceof ApiError && err.status === 409 && err.payload?.conflict) {
@@ -96,7 +96,7 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
     setError('');
     try {
       await api.post(`/events/${eventId}/tasks/${task.id}/execute`, { action: 'postponed', note: 'Pospuesta para resolver el conflicto de horario.' });
-      onResolved('La subtarea quedó en pausa. Elegí otra fecha cuando retomes.');
+      await onResolved('La subtarea quedó en pausa. Elegí otra fecha cuando retomes.');
       onClose();
     } catch (err) {
       setError(err?.message || 'No pudimos posponer la subtarea.');
@@ -108,47 +108,26 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
 
   return (
     <Modal open={open} title={conflict ? '⚠️ Conflicto de sobrecarga' : 'Reprogramar subtarea'} onClose={onClose} labelledBy={HEADING}>
-      <p>
+      {!conflict ? <div className="reschedule-content">
+      <p className="reschedule-summary">
         <strong>“{task?.title}”</strong> · {formatHours(task?.estimatedHours)} estimadas · {task?.scheduledDate ? formatDate(task.scheduledDate) : 'sin fecha'}
       </p>
 
       {error && <div className="form-error" role="alert">{error}</div>}
 
-      {!conflict ? (
-        <form onSubmit={onFormSubmit}>
-          <div className="row">
-            <div className="field" style={{ flex: 1, minWidth: 250 }}>
-              <label htmlFor={`rd-${task?.id}-date`}>Nueva fecha (AAAA-MM-DD)</label>
-              <div className="row">
-                <input
-                  id={`rd-${task?.id}-date`}
-                  type="text"
-                  autoComplete="off"
-                  placeholder="2026-09-27"
-                  maxLength={10}
-                  pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}"
-                  value={newDate}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  aria-describedby={`rd-${task?.id}-date-hint`}
-                  style={{ flex: 1, minWidth: 145 }}
-                />
-                <label htmlFor={`rd-${task?.id}-calendar`} className="field-hint" style={{ margin: 0 }}>
-                  Calendario
-                </label>
-                <input
-                  id={`rd-${task?.id}-calendar`}
-                  type="date"
-                  aria-label="Elegir fecha desde el calendario"
-                  value={/^\d{4}-\d{2}-\d{2}$/.test(newDate) ? newDate : ''}
-                  onChange={(e) => setNewDate(e.target.value)}
-                  style={{ width: 155 }}
-                />
-              </div>
-              <span id={`rd-${task?.id}-date-hint`} className="field-hint">
-                Escribí el año completo o elegí una fecha en el calendario.
-              </span>
+        <form className="reschedule-form" onSubmit={onFormSubmit}>
+          <div className="reschedule-fields">
+            <div className="field">
+              <label htmlFor={`rd-${task?.id}-date`}>Nueva fecha</label>
+              <input
+                id={`rd-${task?.id}-date`}
+                type="date"
+                lang="es-CO"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+              />
             </div>
-            <div className="field" style={{ width: 120 }}>
+            <div className="field">
               <label htmlFor={`rd-${task?.id}-hours`}>Horas est.</label>
               <input
                 id={`rd-${task?.id}-hours`}
@@ -161,20 +140,20 @@ export default function ConflictoModal({ open, task, eventId, onClose, onResolve
               />
             </div>
           </div>
-          <div className="row">
+          <div className="reschedule-actions">
             <button type="submit" disabled={busy}>
               {busy ? 'Verificando conflicto…' : 'Reprogramar'}
             </button>
             <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           </div>
         </form>
-      ) : (
+      </div> : (
         <div className="conflict-panel" role="alertdialog" aria-live="polite">
           <div className="conflict-title">
             ⚠️ Conflicto de sobrecarga
           </div>
-          <p>Quedarías con {formatHours(conflict.scheduledHours)} h planificadas (límite {formatHours(conflict.dailyLimit)} h).</p>
-          <p>Debes editar las horas o posponer la subtarea.</p>
+          <p>Quedarías con {formatHours(conflict.scheduledHours).replace('h', ' h')} planificadas (límite {formatHours(conflict.dailyLimit).replace('h', ' h')}).</p>
+          <p>Elige otra fecha o reduce la duración para mantener un ritmo viable.</p>
           <p className="field-hint">
             Hay <strong>{formatHours(conflict.scheduledHours)}</strong> de subtareas pendientes el{' '}
             {formatDate(conflict.date)} y tu límite es <strong>{formatHours(conflict.dailyLimit)}</strong>.
