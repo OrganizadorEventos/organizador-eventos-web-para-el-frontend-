@@ -1163,6 +1163,32 @@ body { background: #f4f8fc; font-family: var(--font); }
 .today-page .event-task-progress-fill { height: 100%; border-radius: inherit; background: #287cf5; transition: width .2s ease; }
 .today-page .event-task-progress-label { color: #52627a; font-size: .8rem; }
 .today-page .event-task-progress-empty { color: #647895; font-size: .82rem; }
+.today-page .today-event-tasks { grid-column: 1 / -1; display: grid; gap: 9px; min-width: 0; padding-top: 13px; border-top: 1px solid #e7ebf1; }
+.today-page .today-task-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); align-items: center; gap: 12px 16px; min-width: 0; padding: 12px 13px; border: 1px solid #dfe5ec; border-radius: 11px; background: #fff; }
+.today-page .today-task-pending { border-color: #dfe5ec; }
+.today-page .today-task-done { border-color: #b9e7cc; background: #fbfffc; }
+.today-page .today-task-overdue { border-color: #f1c4c8; background: #fffdfd; }
+.today-page .today-task-postponed { border-color: #d9dee7; background: #fcfcfd; }
+.today-page .today-task-info { min-width: 0; }
+.today-page .today-task-title-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
+.today-page .today-task-title-line > strong { min-width: 0; color: #172033; overflow-wrap: anywhere; }
+.today-page .today-task-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+.today-page .today-task-badge i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.today-page .today-task-badge-pending { color: #a16207; background: #fff5d9; }
+.today-page .today-task-badge-done { color: #15803d; background: #e8f7ee; }
+.today-page .today-task-badge-overdue { color: #dc2626; background: #fff0f0; }
+.today-page .today-task-badge-postponed { color: #667085; background: #eef1f5; }
+.today-page .today-task-description { margin: 4px 0 0; color: #64748b; font-size: .8rem; overflow-wrap: anywhere; }
+.today-page .today-task-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 5px; color: #64748b; font-size: .76rem; overflow-wrap: anywhere; }
+.today-page .today-task-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; min-width: 0; }
+.today-page .today-task-actions > button { flex: 0 0 auto; white-space: nowrap; }
+.today-page .today-task-actions .today-task-done-action { border-color: #15803d; color: #15803d; background: #fff; }
+.today-page .today-task-actions .today-task-done-action:hover:not(:disabled) { background: #e8f7ee; }
+.today-page .today-tasks-empty { margin: 0; padding: 5px 2px; color: #64748b; font-size: .84rem; }
+@media (max-width: 900px) {
+  .today-page .today-task-row { grid-template-columns: minmax(0, 1fr); }
+  .today-page .today-task-actions { width: 100%; }
+}
 .today-page .activity-state { min-width: 112px; justify-content: center; padding: 10px 15px; font-size: .83rem; }
 .today-page .state-overdue { color: #ed2939; background: #ffe3e6; }
 .today-page .state-pending { color: #e89b00; background: #fff2d2; }
@@ -1210,6 +1236,9 @@ body { background: #f4f8fc; font-family: var(--font); }
   .today-page .event-task-counts { gap: 5px 10px; }
   .today-page .event-task-counts strong { margin-left: 0; }
   .today-page .event-task-progress { max-width: none; }
+  .today-page .today-event-tasks { grid-column: 1 / -1; }
+  .today-page .today-task-row { grid-template-columns: minmax(0, 1fr); }
+  .today-page .today-task-actions { justify-content: flex-end; width: 100%; }
   .event-type-icon { width: 44px; height: 44px; flex-basis: 44px; }
 }
 .create-page .form-submit-row button { min-width: 230px; min-height: 54px; border-radius: 13px; background: #1677f9; font-weight: 700; }
@@ -1328,9 +1357,7 @@ body { background: #f4f8fc; font-family: var(--font); }
 .create-page .form-submit-row { padding-top: 0; }
 
 /* Progress page status summary and task list. */
-.progress-page .page-title-row { align-items: flex-end; }
-.progress-overall-chip { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border: 1px solid #e5eaf0; border-radius: 10px; color: #667085; background: #fff; font-size: .8rem; }
-.progress-overall-chip strong { color: #172033; font-size: 1.2rem; }
+.progress-page .page-title-row { align-items: flex-start; }
 .progress-page .progress-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 8px; }
 .progress-page .progress-state-card { display: grid; grid-template-columns: 38px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; column-gap: 11px; min-width: 0; padding: 13px 15px; }
 .progress-state-card .progress-state-icon { display: grid; grid-row: 1 / span 2; width: 36px; height: 36px; place-items: center; border-radius: 10px; }
@@ -1377,6 +1404,27 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-task-status.task-state-overdue { color: #dc2626; }
 .progress-task-status.task-state-postponed { color: #667085; }
 .progress-empty-tasks p { margin: 0; color: #7b8596; font-size: .85rem; }
+.progress-main-card { padding: 22px 24px; }
+.progress-event-picker { display: grid; gap: 8px; max-width: 460px; }
+.progress-event-picker label { color: #172033; font-size: .88rem; font-weight: 650; }
+.progress-event-picker select { width: 100%; }
+.progress-event-summary { margin-top: 20px; padding: 20px 0; border-top: 1px solid #edf1f6; border-bottom: 1px solid #edf1f6; }
+.progress-event-heading { align-items: center; gap: 16px; margin-bottom: 16px; }
+.progress-event-heading h2 { margin: 0; font-size: 1.12rem; }
+.progress-event-heading .field-hint { margin: 5px 0 0; }
+.progress-open-event { flex: 0 0 auto; text-decoration: none; }
+.progress-detail-counts .progress-hours { color: #667085; }
+.progress-task-section { padding: 0; }
+.progress-task-section-heading { padding: 19px 0 13px; }
+.progress-inline-empty { margin: 0; padding: 18px 0 2px; color: #667085; font-size: .88rem; }
+.progress-task-row { grid-template-columns: minmax(0, 1fr) auto; }
+.progress-task-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.progress-task-actions button { flex: 0 0 auto; }
+@media (max-width: 480px) {
+  .progress-main-card { padding: 17px 15px; }
+  .progress-event-heading { align-items: flex-start; flex-direction: column; }
+  .progress-open-event { align-self: flex-start; }
+}
 @media (max-width: 760px) {
   .progress-page .page-title-row { align-items: flex-start; }
   .progress-page .progress-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -1388,10 +1436,10 @@ body { background: #f4f8fc; font-family: var(--font); }
 }
 @media (max-width: 480px) {
   .progress-page .page-title-row { flex-direction: column; gap: 11px; }
-  .progress-overall-chip { align-self: flex-start; }
   .progress-task-section { padding-inline: 13px; }
-  .progress-task-row { grid-template-columns: 20px minmax(0, 1fr); gap: 9px; }
-  .progress-task-status { grid-column: 2; justify-self: start; margin-top: 2px; }
+  .progress-task-row { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .progress-task-status { grid-column: 1; justify-self: start; margin-top: 2px; }
+  .progress-task-actions { grid-column: 1; }
 }
 /* Keep the icon and title together, as in the reference header. */
 .create-page .create-title { justify-content: flex-start; }
@@ -1420,4 +1468,10 @@ body { background: #f4f8fc; font-family: var(--font); }
 .auth-form-inner:not(.recovery-form) .remember-option input:active:not(:checked) { background: #b8c5d5; }
 .auth-form-inner:not(.recovery-form) .remember-option input:checked:active { background: #073b70; }
 .auth-form-inner:not(.recovery-form) .remember-option input:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 3px; }
+
+/* Event detail task rows: keep actions together when possible and right-align wrapped actions. */
+.detail-task-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.detail-task-info { flex: 1 1 260px; min-width: 0; }
+.detail-task-actions { display: flex; flex: 0 1 500px; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; min-width: min-content; }
+.detail-task-actions > button { flex: 0 0 auto; }
 

@@ -7,7 +7,7 @@ import Modal from '../components/Modal';
 import TimePicker from '../components/TimePicker';
 import NoteModal from '../components/NoteModal';
 import ConflictoModal from '../components/ConflictoModal';
-import { formatDate, formatHours, formatDateTime, localYMD } from '../lib/dates';
+import { formatDate, formatHours, localYMD } from '../lib/dates';
 import { EVENT_TYPES } from '../lib/eventTypes';
 
 const STATUS_META = {
@@ -316,8 +316,8 @@ export default function EventoDetalle() {
               const meta = STATUS_META[task.status];
               return (
                 <li key={task.id} className="card" style={{ margin: 0, padding: 12 }}>
-                  <div className="row-between">
-                    <div>
+                  <div className="detail-task-row">
+                    <div className="detail-task-info">
                       <div className="row">
                         <strong>{task.title}</strong>
                         <span className={`badge ${meta.badge}`}>{meta.label}</span>
@@ -329,13 +329,13 @@ export default function EventoDetalle() {
                         {task.note && <span style={{ marginLeft: 10 }}>✍ {task.note}</span>}
                       </div>
                     </div>
-                    <div className="row">
+                    <div className="detail-task-actions">
                       <button type="button" className="btn-ghost btn-sm" onClick={() => setReprogram(task)}>
                         Reprogramar
                       </button>
                       {task.status !== 'done' && (
                         <>
-                          <button type="button" className="btn-success btn-sm" onClick={() => setExecuteTask({ task, action: 'done' })}>
+                          <button type="button" className="btn-ghost btn-sm" onClick={() => setExecuteTask({ task, action: 'done' })}>
                             Hecho
                           </button>
                           {task.status !== 'postponed' && (
@@ -359,34 +359,6 @@ export default function EventoDetalle() {
           </ul>
         )}
       </div>
-
-      {event.activities?.length > 0 && (
-        <div className="card">
-          <h2>Últimos cambios</h2>
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th scope="col">Cuándo</th>
-                  <th scope="col">Subtarea</th>
-                  <th scope="col">Acción</th>
-                  <th scope="col">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                {event.activities.slice(0, 12).map((a) => (
-                  <tr key={a.id}>
-                    <td>{formatDateTime(a.created_at)}</td>
-                    <td>{a.task_title}</td>
-                    <td>{ACTION_LABEL[a.action] || a.action}</td>
-                    <td>{a.note || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Editar evento */}
       <Modal open={Boolean(editingEvent)} title="Editar evento" onClose={() => setEditingEvent(null)} labelledBy="edit-event-title">
@@ -525,11 +497,3 @@ export default function EventoDetalle() {
   );
 }
 
-const ACTION_LABEL = {
-  created: 'Creada',
-  rescheduled: 'Reprogramada',
-  done: 'Marcada hecha',
-  postponed: 'Pospuesta',
-  edited: 'Editada',
-  deleted: 'Eliminada',
-};

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Modal from './Modal';
 
 const ACTION_META = {
@@ -25,6 +25,13 @@ export default function NoteModal({ open, task, action, onClose, onConfirm }) {
 
   const meta = ACTION_META[action] || ACTION_META.done;
   const headingId = 'note-modal-title';
+
+  useEffect(() => {
+    if (!open) return;
+    setNote('');
+    setBusy(false);
+    setError('');
+  }, [open, task?.id, action]);
 
   async function submit(e) {
     e.preventDefault();

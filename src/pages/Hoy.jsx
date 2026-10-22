@@ -1,16 +1,25 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { localYMD, formatDate, formatHours } from '../lib/dates';
-import { LoadingState, EmptyState, ErrorState } from '../components/States';
+import { LoadingState, EmptyState, ErrorState, SuccessBanner } from '../components/States';
 import Modal from '../components/Modal';
+import NoteModal from '../components/NoteModal';
+import ConflictoModal from '../components/ConflictoModal';
 
 function eventStatus(event, today) {
   if (event.status === 'done') return 'done';
   if (event.taskCount > 0 && event.doneCount === event.taskCount) return 'done';
   if (event.overdueCount > 0 || (event.date && event.date < today)) return 'overdue';
   return 'pending';
+}
+
+function taskStatus(task, today) {
+  if (task.status === 'done') return { key: 'done', label: 'Hecha' };
+  if (task.status === 'postponed') return { key: 'postponed', label: 'Pospuesta' };
+  if (task.status === 'pending' && task.scheduledDate && task.scheduledDate < today) return { key: 'overdue', label: 'Vencida' };
+  return { key: 'pending', label: 'Pendiente' };
 }
 
 function formatConflictDate(date) {
@@ -62,9 +71,23 @@ export default function Hoy() {
   const [limitBusy, setLimitBusy] = useState(false);
   const [limitConflict, setLimitConflict] = useState(null);
   const [reducedHours, setReducedHours] = useState({});
+  const [taskDetails, setTaskDetails] = useState({});
+  const [taskDetailLoading, setTaskDetailLoading] = useState({});
+  const [taskMessage, setTaskMessage] = useState('');
+  const [taskActionError, setTaskActionError] = useState('');
+  const [taskActionBusy, setTaskActionBusy] = useState(false);
+  const [reprogramTask, setReprogramTask] = useState(null);
+  const [pendingEditAfterConflict, setPendingEditAfterConflict] = useState(null);
+  const [executeTask, setExecuteTask] = useState(null);
+  const [editTask, setEditTask] = useState(null);
+  const [confirmDeleteTask, setConfirmDeleteTask] = useState(null);
+  const [busyDeleteTask, setBusyDeleteTask] = useState(false);
+  const taskDetailRequestRef = useRef({});
+  const taskLoadAttemptedRef = useRef(new Set());
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    if (!silent) taskLoadAttemptedRef.current.clear();
     setError('');
     const date = localYMD();
     const results = await Promise.allSettled([
@@ -77,7 +100,7 @@ export default function Hoy() {
     if (results[1].status === 'fulfilled') setEvents(results[1].value.events);
     else failed = true;
     setError(failed ? 'No se pudo cargar toda la información. Inténtalo de nuevo.' : '');
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -88,6 +111,150 @@ export default function Hoy() {
     const state = eventStatus(event, todayDate);
     return (eventFilter === 'all' || event.name === eventFilter) && (statusFilter === 'all' || state === statusFilter);
   }), [events, todayDate, eventFilter, statusFilter]);
+
+  const loadEventTasks = useCallback(async (eventId) => {
+    const requestId = (taskDetailRequestRef.current[eventId] || 0) + 1;
+    taskDetailRequestRef.current[eventId] = requestId;
+    setTaskDetailLoading((current) => ({ ...current, [eventId]: true }));
+    setTaskActionError('');
+    try {
+      const { event } = await api.get(`/events/${eventId}`);
+      if (taskDetailRequestRef.current[eventId] === requestId) {
+        setTaskDetails((current) => ({ ...current, [eventId]: event }));
+      }
+      return event;
+    } catch (err) {
+      setTaskActionError(err instanceof ApiError ? err.message : 'No pudimos cargar las subtareas del evento.');
+      return null;
+    } finally {
+      if (taskDetailRequestRef.current[eventId] === requestId) {
+        setTaskDetailLoading((current) => ({ ...current, [eventId]: false }));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (visibleEvents.length === 0) return;
+    visibleEvents.forEach((event) => {
+      if (Number(event.taskCount) > 0 && !taskDetails[event.id] && !taskDetailLoading[event.id] && !taskLoadAttemptedRef.current.has(event.id)) {
+        taskLoadAttemptedRef.current.add(event.id);
+        loadEventTasks(event.id);
+      }
+    });
+  }, [visibleEvents, taskDetails, taskDetailLoading, loadEventTasks]);
+
+  async function refreshAfterTaskAction(eventId) {
+    const requestId = (taskDetailRequestRef.current[eventId] || 0) + 1;
+    taskDetailRequestRef.current[eventId] = requestId;
+    const [, response] = await Promise.all([
+      load({ silent: true }),
+      api.get(`/events/${eventId}`),
+    ]);
+    if (taskDetailRequestRef.current[eventId] === requestId) {
+      setTaskDetails((current) => ({ ...current, [eventId]: response.event }));
+    }
+    return response.event;
+  }
+
+  function flashTaskMessage(text) {
+    setTaskMessage(text);
+    window.setTimeout(() => setTaskMessage(''), 5000);
+  }
+
+  async function executeTaskAction(task, action, note) {
+    setTaskActionBusy(true);
+    try {
+      const { task: updatedTask } = await api.post(`/events/${task.eventId}/tasks/${task.id}/execute`, { action, note });
+      const requestId = (taskDetailRequestRef.current[task.eventId] || 0) + 1;
+      taskDetailRequestRef.current[task.eventId] = requestId;
+      setTaskDetails((current) => {
+        const event = current[task.eventId];
+        if (!event) return current;
+        return {
+          ...current,
+          [task.eventId]: {
+            ...event,
+            tasks: event.tasks.map((item) => Number(item.id) === Number(updatedTask.id) ? { ...item, ...updatedTask } : item),
+          },
+        };
+      });
+      setExecuteTask(null);
+      flashTaskMessage(action === 'done' ? '¡Subtarea completada!' : action === 'pending' ? 'Subtarea reabierta.' : 'Subtarea pospuesta. Quedó en pausa.');
+      try {
+        await refreshAfterTaskAction(task.eventId);
+      } catch {
+        setTaskActionError('La subtarea se actualizó, pero no pudimos refrescar todos los datos. Inténtalo de nuevo.');
+      }
+    } finally {
+      setTaskActionBusy(false);
+    }
+  }
+
+  async function saveEditedTask() {
+    if (!editTask) return;
+    const hours = Number(editTask.estimatedHours);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setTaskActionError('Las horas estimadas deben ser mayores que 0.');
+      return;
+    }
+    setTaskActionError('');
+    setTaskActionBusy(true);
+    try {
+      await api.patch(`/events/${editTask.eventId}/tasks/${editTask.id}`, {
+        title: editTask.title,
+        scheduledDate: editTask.scheduledDate || null,
+        estimatedHours: hours,
+      });
+      setEditTask(null);
+      await refreshAfterTaskAction(editTask.eventId);
+      flashTaskMessage('Subtarea actualizada.');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409 && err.payload?.conflict) {
+        setPendingEditAfterConflict({ id: editTask.id, eventId: editTask.eventId, title: editTask.title });
+        setReprogramTask({ ...editTask, initialConflict: err.payload.conflict });
+        setEditTask(null);
+        return;
+      }
+      setTaskActionError(err?.message || 'No pudimos guardar la subtarea.');
+    } finally {
+      setTaskActionBusy(false);
+    }
+  }
+
+  const closeReprogram = useCallback(() => {
+    setReprogramTask(null);
+    setPendingEditAfterConflict(null);
+  }, []);
+
+  async function handleReprogramResolved(text) {
+    const pendingEdit = pendingEditAfterConflict;
+    setPendingEditAfterConflict(null);
+    if (pendingEdit) {
+      await api.patch(`/events/${pendingEdit.eventId}/tasks/${pendingEdit.id}`, { title: pendingEdit.title });
+      await refreshAfterTaskAction(pendingEdit.eventId);
+      flashTaskMessage('Subtarea actualizada.');
+      return;
+    }
+    await refreshAfterTaskAction(reprogramTask.eventId);
+    flashTaskMessage(text);
+  }
+
+  async function deleteTask() {
+    if (!confirmDeleteTask) return;
+    setBusyDeleteTask(true);
+    setTaskActionError('');
+    try {
+      await api.del(`/events/${confirmDeleteTask.eventId}/tasks/${confirmDeleteTask.id}`);
+      const eventId = confirmDeleteTask.eventId;
+      setConfirmDeleteTask(null);
+      await refreshAfterTaskAction(eventId);
+      flashTaskMessage('Subtarea eliminada.');
+    } catch (err) {
+      setTaskActionError(err?.message || 'No pudimos eliminar la subtarea.');
+    } finally {
+      setBusyDeleteTask(false);
+    }
+  }
 
   async function saveLimit(value) {
     setLimitBusy(true);
@@ -217,6 +384,8 @@ export default function Hoy() {
     </section>}
 
     {error && <div className="form-error" role="alert">{error}<button className="btn-ghost btn-sm" type="button" onClick={load}>Reintentar</button></div>}
+    {taskMessage && <SuccessBanner message={taskMessage} />}
+    {taskActionError && <div className="form-error" role="alert">{taskActionError}</div>}
     <section className="activity-section" aria-label="Mis eventos">
       <h2 className="section-title">Mis eventos<span>{visibleEvents.length}</span></h2>
       {visibleEvents.length ? <ul className="urgent-list">{visibleEvents.map((event) => {
@@ -247,6 +416,34 @@ export default function Hoy() {
               {state !== 'done' && <button type="button" role="menuitem" disabled={actionBusy} onClick={() => finishEvent(event)}>Marcar terminado</button>}
             </div>}
           </div>
+          <div className="today-event-tasks">
+            {Number(event.taskCount || 0) === 0 ? <p className="today-tasks-empty">Este evento todavía no tiene subtareas.</p> : taskDetailLoading[event.id] ? <p className="today-tasks-empty" role="status">Cargando subtareas…</p> : taskDetails[event.id] ? (
+              taskDetails[event.id].tasks.length ? taskDetails[event.id].tasks.map((rawTask) => {
+                const task = { ...rawTask, eventId: event.id };
+                const state = taskStatus(task, todayDate);
+                return <article className={`today-task-row today-task-${state.key}`} key={task.id}>
+                  <div className="today-task-info">
+                    <div className="today-task-title-line"><strong>{task.title}</strong><span className={`today-task-badge today-task-badge-${state.key}`}><i aria-hidden="true" />{state.label}</span></div>
+                    {task.description && <p className="today-task-description">{task.description}</p>}
+                    <div className="today-task-meta">
+                      <span>{task.scheduledDate ? formatDate(task.scheduledDate) : 'Sin fecha planificada'}</span>
+                      {task.estimatedHours !== null && task.estimatedHours !== undefined && <span>{formatHours(task.estimatedHours)}</span>}
+                      {task.note && <span>{task.note}</span>}
+                    </div>
+                  </div>
+                  <div className="today-task-actions">
+                    <button type="button" className="btn-ghost btn-sm" disabled={taskActionBusy || busyDeleteTask} onClick={() => setReprogramTask(task)}>Reprogramar</button>
+                    {task.status !== 'done' && <>
+                      <button type="button" className="btn-ghost btn-sm today-task-done-action" disabled={taskActionBusy || busyDeleteTask} onClick={() => setExecuteTask({ task, action: 'done' })}>Hecho</button>
+                      {task.status !== 'postponed' && <button type="button" className="btn-ghost btn-sm" disabled={taskActionBusy || busyDeleteTask} onClick={() => setExecuteTask({ task, action: 'postponed' })}>Posponer</button>}
+                    </>}
+                    <button type="button" className="btn-ghost btn-sm" disabled={taskActionBusy || busyDeleteTask} onClick={() => setEditTask({ ...task, scheduledDate: task.scheduledDate || '' })}>Editar</button>
+                    <button type="button" className="btn-danger-ghost btn-sm" disabled={taskActionBusy || busyDeleteTask} onClick={() => setConfirmDeleteTask(task)}>Quitar</button>
+                  </div>
+                </article>;
+              }) : <p className="today-tasks-empty">Este evento todavía no tiene subtareas.</p>
+            ) : <p className="today-tasks-empty">No se pudieron cargar las subtareas.</p>}
+          </div>
         </li>;
       })}</ul> : events ? <div className="card today-empty"><EmptyState emoji="☕" title={events.length ? 'No hay resultados' : 'Aún no has creado eventos'} text={events.length ? 'Cambia los filtros para ver tus eventos.' : 'Crea tu primer evento para empezar a organizar sus preparativos.'}>{!events.length && <Link className="primary-link-button" to="/crear">Crear evento</Link>}</EmptyState></div> : <div className="card"><p>No se pudieron cargar los eventos.</p><button type="button" className="btn-secondary btn-sm" onClick={load}>Reintentar</button></div>}
     </section>
@@ -254,6 +451,37 @@ export default function Hoy() {
       <p>¿Quieres eliminar “{deleteTarget?.name}” y todas sus subtareas? Esta acción no se puede deshacer.</p>
       <div className="row"><button type="button" className="btn-danger" disabled={actionBusy} onClick={deleteEvent}>{actionBusy ? 'Eliminando…' : 'Eliminar evento'}</button><button type="button" className="btn-ghost" disabled={actionBusy} onClick={() => setDeleteTarget(null)}>Cancelar</button></div>
     </Modal>
+    <Modal open={Boolean(editTask)} title="Editar subtarea" onClose={() => setEditTask(null)} labelledBy="today-edit-task-title">
+      {editTask && <>
+        <div className="field"><label htmlFor="today-edit-task-name">Título</label><input id="today-edit-task-name" value={editTask.title} onChange={(event) => setEditTask((task) => ({ ...task, title: event.target.value }))} /></div>
+        <div className="row">
+          <div className="field" style={{ flex: 1, minWidth: 170 }}><label htmlFor="today-edit-task-date">Para el día</label><input id="today-edit-task-date" type="date" value={editTask.scheduledDate} onChange={(event) => setEditTask((task) => ({ ...task, scheduledDate: event.target.value }))} /></div>
+          <div className="field" style={{ width: 120 }}><label htmlFor="today-edit-task-hours">Horas est.</label><input id="today-edit-task-hours" type="number" min="0" step="any" value={editTask.estimatedHours} onChange={(event) => setEditTask((task) => ({ ...task, estimatedHours: event.target.value }))} /></div>
+        </div>
+        {taskActionError && <div className="form-error" role="alert">{taskActionError}</div>}
+        <div className="row"><button type="button" className="btn-success" disabled={taskActionBusy} onClick={saveEditedTask}>{taskActionBusy ? 'Guardando…' : 'Guardar'}</button><button type="button" className="btn-ghost" onClick={() => setEditTask(null)}>Cancelar</button></div>
+      </>}
+    </Modal>
+    <Modal open={Boolean(confirmDeleteTask)} title="Quitar subtarea" onClose={() => !busyDeleteTask && setConfirmDeleteTask(null)} labelledBy="today-delete-task-title">
+      <p>¿Quitar “{confirmDeleteTask?.title}” del plan?</p>
+      {taskActionError && <div className="form-error" role="alert">{taskActionError}</div>}
+      <div className="row"><button type="button" className="btn-danger" disabled={busyDeleteTask} onClick={deleteTask}>{busyDeleteTask ? 'Quitando…' : 'Sí, quitar'}</button><button type="button" className="btn-ghost" disabled={busyDeleteTask} onClick={() => setConfirmDeleteTask(null)}>Cancelar</button></div>
+    </Modal>
+    <ConflictoModal
+      key={reprogramTask?.id || 'today-reprogram'}
+      open={Boolean(reprogramTask)}
+      task={reprogramTask}
+      eventId={reprogramTask?.eventId}
+      initialConflict={reprogramTask?.initialConflict}
+      onClose={closeReprogram}
+      onResolved={handleReprogramResolved}
+      onVerifyRescheduled={async (taskId) => {
+        const refreshed = await api.get(`/events/${reprogramTask.eventId}`);
+        setTaskDetails((current) => ({ ...current, [reprogramTask.eventId]: refreshed.event }));
+        return refreshed.event?.tasks?.find((task) => Number(task.id) === Number(taskId)) || null;
+      }}
+    />
+    <NoteModal open={Boolean(executeTask)} task={executeTask?.task} action={executeTask?.action} onClose={() => setExecuteTask(null)} onConfirm={executeTaskAction} />
     <Modal open={Boolean(limitConflict)} title="Conflicto de sobrecarga" onClose={cancelLimitChange} labelledBy="daily-limit-conflict-title">
       {limitConflict && <div className="daily-limit-conflicts" role="alert">
         <h3 id="daily-limit-conflict-title">Conflicto de sobrecarga</h3>
