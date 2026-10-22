@@ -1363,6 +1363,7 @@ body { background: #f4f8fc; font-family: var(--font); }
 
 /* Progress page status summary and task list. */
 .progress-page .page-title-row { align-items: flex-start; }
+.progress-page .page-title-row .eyebrow { color: #0b5cad; }
 .progress-page .progress-overview { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 8px; }
 .progress-page .progress-state-card { display: grid; grid-template-columns: 38px minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; column-gap: 11px; min-width: 0; padding: 13px 15px; }
 .progress-state-card .progress-state-icon { display: grid; grid-row: 1 / span 2; width: 36px; height: 36px; place-items: center; border-radius: 10px; }
@@ -1382,7 +1383,7 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-page .event-progress-list { margin-top: 16px; }
 .event-progress-counts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 7px 0 9px; font-size: .72rem; }
 .task-state-text.task-state-postponed { color: #667085; }
-.progress-detail-counts { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 14px; margin-top: 14px; color: #7b8596; font-size: .76rem; }
+.progress-detail-counts { display: flex; flex-wrap: wrap; align-items: center; gap: 7px 14px; margin-top: 14px; color: #53627a; font-size: .76rem; }
 .progress-detail-heading { align-items: flex-start; }
 .progress-detail-heading .eyebrow { margin-bottom: 4px; }
 .progress-detail-heading h2 { margin: 0; }
@@ -1391,9 +1392,9 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-detail-meta .progress-label { display: none; }
 .progress-task-section { padding: 0 18px; }
 .progress-task-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0 12px; border-bottom: 1px solid #edf1f6; }
-.progress-task-section-heading .eyebrow { margin-bottom: 3px; }
+.progress-task-section-heading .eyebrow { margin-bottom: 3px; color: #0b5cad; }
 .progress-task-section-heading h2 { margin: 0; font-size: 1rem; }
-.progress-task-section-heading > span { color: #7b8596; font-size: .78rem; }
+.progress-task-section-heading > span { color: #53627a; font-size: .78rem; }
 .progress-task-list { display: grid; }
 .progress-task-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #edf1f6; }
 .progress-task-row:last-child { border-bottom: 0; }
@@ -1401,7 +1402,7 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-task-check input { width: 16px; height: 16px; margin: 0; accent-color: #15803d; }
 .progress-task-main { min-width: 0; }
 .progress-task-main > strong { color: #172033; font-size: .88rem; font-weight: 650; overflow-wrap: anywhere; }
-.progress-task-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; color: #7b8596; font-size: .75rem; }
+.progress-task-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; color: #53627a; font-size: .75rem; }
 .progress-task-status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: .76rem; font-weight: 700; }
 .progress-task-status i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .progress-task-status.task-state-done { color: #15803d; }
@@ -1416,7 +1417,11 @@ body { background: #f4f8fc; font-family: var(--font); }
 .progress-event-summary { margin-top: 20px; padding: 20px 0; border-top: 1px solid #edf1f6; border-bottom: 1px solid #edf1f6; }
 .progress-event-heading { align-items: center; gap: 16px; margin-bottom: 16px; }
 .progress-event-heading h2 { margin: 0; font-size: 1.12rem; }
-.progress-event-heading .field-hint { margin: 5px 0 0; }
+.progress-event-heading .field-hint { margin: 5px 0 0; color: #53627a; }
+.progress-page .progress-label { color: #53627a; }
+.progress-page .progress-open-event { color: #0b5cad; }
+.progress-page .progress-task-actions .btn-ghost:hover:not(:disabled) { color: #4b5563; }
+.progress-page .progress-task-actions button:disabled { opacity: 1; }
 .progress-open-event { flex: 0 0 auto; text-decoration: none; }
 .progress-detail-counts .progress-hours { color: #667085; }
 .progress-task-section { padding: 0; }
