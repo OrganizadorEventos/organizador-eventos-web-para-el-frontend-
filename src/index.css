@@ -417,6 +417,7 @@ h2 { font-size: 1.15rem; letter-spacing: -.02em; }
 .nav-icon { display: inline-grid; place-items: center; width: 17px; font-size: 1rem; }
 .sidebar-footer { display: flex; align-items: center; gap: 9px; padding: 13px 2px 2px; border-top: 1px solid rgba(255,255,255,.09); }
 .avatar { display: grid; place-items: center; flex: 0 0 29px; width: 29px; height: 29px; border-radius: 50%; color: #fff; background: #3478f6; font-size: .75rem; font-weight: 700; }
+.sidebar-footer .avatar { background: #2a6bda; }
 .user-details { display: grid; flex: 1; min-width: 0; }
 .user-name { overflow: hidden; color: #f6f7fa; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
 .user-limit { color: #9da8bc; font-size: .68rem; }
