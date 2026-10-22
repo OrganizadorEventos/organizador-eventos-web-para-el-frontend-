@@ -27,9 +27,9 @@ export default function Layout() {
       <a href="#main" className="skip-link">Saltar al contenido principal</a>
       <div className="workspace">
         <aside className="sidebar">
-          <NavLink to="/hoy" className="brand" aria-label="MIVO, inicio">
+          <div className="brand">
             <img className="brand-mascot" src={mascot} alt="" /><span>MIVO</span>
-          </NavLink>
+          </div>
           <nav className="nav" aria-label="Navegación principal">
             {navItems.map((item) => (
               <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'active' : '')}>

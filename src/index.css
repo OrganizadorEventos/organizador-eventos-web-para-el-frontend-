@@ -753,12 +753,22 @@ body { background: #f4f8fc; font-family: var(--font); }
 .events-page .table-actions { flex-wrap: nowrap; gap: 4px; }
 .events-page .table-actions a, .events-page .table-actions button { display: inline-grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; padding: 0; border: 0; border-radius: 8px; line-height: 1; }
 .events-page .event-action-icon { display: block; width: 20px; height: 20px; }
-.events-page .table-actions .event-action-edit, .events-page .table-actions .event-action-view { color: #287cf5; }
+.events-page .table-actions .event-action-edit { color: #287cf5; }
 .events-page .table-actions .event-action-delete { color: #ef4444; }
 .events-page .activity-table td:last-child { white-space: nowrap; }
 .events-page .table-actions .event-action-edit:hover { color: #1768df; background: #eaf2ff; }
-.events-page .table-actions .event-action-view:hover { color: #1768df; background: #eaf2ff; }
 .events-page .table-actions .event-action-delete:hover { color: #dc2626; background: #fef0f0; }
+.events-page .eyebrow { color: #0b5cad; }
+.events-page .primary-link-button { background: #0b5cad; }
+.events-page .primary-link-button:hover { background: #094b8f; }
+.events-page .search-field { color: #53627a; }
+.events-page .search-field input::placeholder { color: #53627a; opacity: 1; }
+.events-page .activity-table td small, .events-page .table-footer { color: #53627a; }
+.events-page .activity-state { font-size: .72rem; }
+.events-page .activity-state.state-overdue { background: #b42318; }
+.events-page .activity-state.state-pending { color: #596579; }
+.events-page .table-title-link { display: inline-flex; align-items: center; gap: 6px; }
+.events-page .table-title-link:hover { color: #0b5cad; }
 .profile-layout { display: grid; grid-template-columns: minmax(210px, .7fr) minmax(360px, 1.3fr); align-items: start; gap: 18px; }
 .detail-heading { align-items: flex-start; margin-bottom: 22px; }
 .detail-heading h1 { margin-bottom: 7px; }
@@ -1360,6 +1370,8 @@ body { background: #f4f8fc; font-family: var(--font); }
 .create-page .create-empty-tasks { border-color: #e1e8f1; }
 .create-page .create-empty-tasks svg { width: 46px; height: 46px; fill: none; stroke: #74849e; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .create-page .form-submit-row { padding-top: 0; }
+.create-page .form-submit-row button { background: #0b5cad; }
+.create-page .form-submit-row button:hover:not(:disabled) { background: #094b8f; }
 
 /* Progress page status summary and task list. */
 .progress-page .page-title-row { align-items: flex-start; }
