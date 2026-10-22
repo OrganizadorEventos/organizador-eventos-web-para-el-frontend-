@@ -391,7 +391,7 @@ export default function Hoy() {
       {visibleEvents.length ? <ul className="urgent-list">{visibleEvents.map((event) => {
           const state = eventStatus(event, todayDate);
         return <li className="activity-card event-card" key={event.id}>
-          <Link to={`/evento/${event.id}`} className={`event-type-icon event-icon-${state}`} aria-label={`Abrir ${event.name}. Tipo: ${event.type || 'Evento'}. Estado: ${statusLabel[state]}`} title={event.type || 'Evento'}><EventTypeIcon type={event.type} /></Link>
+          <div className={`event-type-icon event-icon-${state}`} aria-hidden="true"><EventTypeIcon type={event.type} /></div>
           <div className="activity-main"><div className="activity-title-row"><Link to={`/evento/${event.id}`} className="activity-title">{event.name}</Link></div><div className="activity-meta"><span>▪ {event.date ? formatDate(event.date) : 'Fecha por definir'}</span><span>◇ {event.type || 'Evento'}</span></div>
             {Number(event.taskCount) > 0 ? (() => {
               const total = Number(event.taskCount) || 0;
