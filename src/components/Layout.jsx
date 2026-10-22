@@ -47,7 +47,7 @@ export default function Layout() {
             </button>
           </div>
         </aside>
-        <main id="main" className="main-panel">
+        <main id="main" className="main-panel" aria-label={`Contenido principal: ${pageTitle}`}>
           <div className="mobile-brand"><img className="brand-mascot" src={mascot} alt="" /> MIVO <span className="mobile-page-title">/ {pageTitle}</span></div>
           <div className="page-content"><Outlet /></div>
         </main>
